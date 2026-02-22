@@ -1,11 +1,20 @@
 <template>
+  <!-- Condiciona las rutas depeendiendo del login -->
   <nav>
     <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
+    <router-link to="/about">About</router-link> | 
+    <router-link to="/crearUsuario">CrearUsuario</router-link> | 
+    <router-link to="/sistema">InfoSistema</router-link>
   </nav>
   <router-view/>
 </template>
+<script setup>
+//manejar login
+//metodo de manejo del login
+import {ref, onMounted} from 'vue'
+const usuarioActivo= ref([]);
 
+</script>
 <style>
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
