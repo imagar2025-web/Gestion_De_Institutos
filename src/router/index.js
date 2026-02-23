@@ -2,32 +2,45 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 
 const routes = [
-  {
-    path: '/',
-    name: 'home',
-    component: HomeView
-  },
-  {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
-  },
-  {
-    path: '/sistema',
-    component : () => import('../components/InfoSistema.vue')
-  },
-  {
-    path: '/creaIncidencias',
-    component : () => import('../components/creaIncidencias.vue')
-  }
+  // Pública
+  { path: '/login', component: () => import('../components/Login.vue'), meta: { publica: true } },
+
+  // General
+  { path: '/', name: 'home', component: HomeView },
+  { path: '/about', name: 'about', component: () => import('../views/AboutView.vue') },
+  { path: '/sistema', component: () => import('../components/InfoSistema.vue') },
+
+  // Incidencias
+  { path: '/creaIncidencias', component: () => import('../components/CrearIncidencia.vue') },
+  { path: '/resolverIncidencias', component: () => import('../components/ResolverIncidencia.vue') },
+
+  // Espacios
+  { path: '/reservarAula', component: () => import('../components/ReservarEspacio.vue') },
+  { path: '/creEspacios', component: () => import('../components/CrearEspacios.vue') },
+
+  // Mantenimiento
+  { path: '/creaDepartamento', component: () => import('../components/CrearDepartamento.vue') },
+  { path: '/creaProfesores', component: () => import('../components/CrearProfesores.vue') },
+  { path: '/creaUsuarios', component: () => import('../components/CrearUsuario.vue') },
+  { path: '/creaCursos', component: () => import('../components/CrearCursos.vue') },
 ]
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
+})
+
+// Guardia de navegación
+router.beforeEach((to, from, next) => {
+  const sesion = sessionStorage.getItem("usuario");
+
+  if (!to.meta.publica && !sesion) {
+    next('/login')
+  } else if (to.path === '/login' && sesion) {
+    next('/')
+  } else {
+    next()
+  }
 })
 
 export default router

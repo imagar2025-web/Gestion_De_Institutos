@@ -2,6 +2,7 @@
     <h1>GET SISTEMA</h1>
     <button @click="obtenerAlumnos"> Refrescar Lista de alumnos</button>
     <br><br>
+    <h2>alumnos</h2>
     <table v-if="alumnos.length > 0">
         <thead>
             <tr>
@@ -12,6 +13,7 @@
             </tr>
         </thead>
         <tbody>
+
             <tr v-for="alumno in alumnos" :key="alumno.id">
                 <td>{{ alumno.nia }}</td>
                 <td>{{ alumno.nombre }}</td>
@@ -22,6 +24,7 @@
     </table>
     <p v-else>No hay alumnos cargados o la API no responde.</p>
     <button @click="obtenerProfesores"> Refrescar Lista</button>
+    <h2>profesores</h2>
     <table v-if="profesores.length > 0">
         <thead>
             <tr>
@@ -45,6 +48,7 @@
     <p v-else>No hay profesores cargados o la API no responde.</p>
 
     <button @click="obtenerCursos"> Refrescar Lista</button>
+    <h2>Cursos</h2>
     <table v-if="cursos.length > 0">
         <thead>
             <tr>
@@ -65,6 +69,7 @@
     </table>
     <p v-else>No hay cursos cargados o la API no responde.</p>
     <button @click="obtenerEspacios"> Refrescar Lista</button>
+    <h2>espacios</h2>
     <table v-if="espacios.length > 0">
         <thead>
             <tr>
