@@ -20,8 +20,8 @@ const routes = [
     component : () => import('../components/InfoSistema.vue')
   },
   {
-    path: '/crearUsuario',
-    component : () => import('../components/CrearUsuario.vue')
+    path: '/creaIncidencias',
+    component : () => import('../components/creaIncidencias.vue')
   }
 ]
 
