@@ -22,8 +22,9 @@
 <script setup>
 import { ref } from "vue";
 import axios from "axios";
+import { URL } from "@/variablesGlobales";
 
-const API_URL = "http://100.27.173.196:3000";
+const API_URL = URL;
 const z_usuario_query = "?zusuario=ivan";
 const departamento = ref(
     {

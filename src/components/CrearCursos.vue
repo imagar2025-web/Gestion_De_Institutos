@@ -8,11 +8,11 @@
         <label>Turno ID</label><input v-model="curso.turno_id" required><br>
         <label>Año académico</label><input v-model="curso.anio_academico" placeholder="2024-2025" required><br>
         <label>Tutor ID</label><input v-model="curso.tutor_id" required><br>
-        <label>Aula ID</label><input v-model="curso.aula_id" required><br>
+        <label>horario ID</label><input v-model="curso.horario_id" required><br>
         <button type="submit">Insertar curso</button>
     </form>
     <ul>
-        <li>La etapa, turno, tutor y aula deben existir previamente en la base de datos</li>
+        <li>La etapa, turno, tutor y horario deben existir previamente en la base de datos</li>
         <li>Si el ID está duplicado no se realizará la inserción</li>
     </ul>
     <p v-if="mensajeCurso">{{ mensajeCurso }}</p>
@@ -33,7 +33,7 @@ const curso = ref({
     turno_id: "",
     anio_academico: "",
     tutor_id: "",
-    aula_id: "",
+    horario_id: "",
     zfecha: new Date().toISOString().slice(0, 10),
     zusuario: "ivan"
 });

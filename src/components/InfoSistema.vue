@@ -95,22 +95,14 @@
 </template>
 <script setup>
 import {ref,onMounted} from 'vue'
+import { URL } from '@/variablesGlobales';
 const alumnos = ref([]);
 const profesores = ref([]);
 const espacios = ref([]);
 const cursos = ref([]);
-const API_URL = "http://100.27.173.196:3000/";
+const API_URL = URL+"/";
 const z_usuario="?zusuario=ivan"
-const obtenerAlumnos = async () => {
-    try {
-        const response = await fetch(API_URL + "alumnos"+z_usuario);
-        if (!response.ok) throw new Error("Error en la API");
-        alumnos.value = await response.json();
-    } catch (error) {
-        console.error("Error al conectar con la API:", error);
-        alert("No se pudo conectar con la API en AWS");
-    }
-};
+
 const obtener = async (ruta,variable) => {
     try {
         const response = await fetch(API_URL + ruta+z_usuario);

@@ -5,6 +5,8 @@
 
             <!-- Formulario de reserva -->
             <form @submit.prevent="hacerReserva()">
+
+                <!-- ESPACIO -->
                 <div class="form-group">
                     <label>Espacio</label>
                     <select v-model="reserva.espacio_id" @change="seleccionarEspacio" required>
@@ -29,34 +31,38 @@
                     <p>🟢 <strong>Estado:</strong> {{ espacioSeleccionado.estado_operativo }}</p>
                 </div>
 
+                <!-- FECHA -->
                 <div class="form-group">
                     <label>Fecha</label>
-                    <input type="date" v-model="reserva.fecha" :min="hoy" required>
+                    <input type="date" v-model="reserva.fecha_reserva" :min="hoy" required>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Hora inicio</label>
-                        <select v-model="reserva.hora_inicio" required>
-                            <option value="">--</option>
-                            <option v-for="h in horas" :key="h" :value="h">{{ h }}</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Hora fin</label>
-                        <select v-model="reserva.hora_fin" required>
-                            <option value="">--</option>
-                            <option v-for="h in horas" :key="h" :value="h">{{ h }}</option>
-                        </select>
-                    </div>
+                <!-- HORARIO -->
+                <div class="form-group">
+                    <label>Horario</label>
+                    <select v-model="reserva.horario_id" required>
+                        <option value="">-- Selecciona un horario --</option>
+                        <option
+                            v-for="h in horarios"
+                            :key="h.id"
+                            :value="h.id"
+                        >
+                            {{ h.nombre }} — {{ h.hora_inicio }} a {{ h.hora_fin }} ({{ h.turno_id }})
+                        </option>
+                    </select>
+                    <p v-if="cargandoHorarios" class="msg-cargando">⏳ Cargando horarios...</p>
+                    <p v-if="errorHorarios" class="msg-error">❌ No se pudieron cargar los horarios</p>
                 </div>
 
+                <!-- MOTIVO -->
                 <div class="form-group">
                     <label>Motivo</label>
-                    <input v-model="reserva.motivo" placeholder="¿Para qué necesitas el espacio?" required>
+                    <input v-model="reserva.motivo_reserva" placeholder="¿Para qué necesitas el espacio?" required>
                 </div>
 
-                <button type="submit">Reservar espacio</button>
+                <button type="submit" :disabled="enviando">
+                    {{ enviando ? 'Reservando...' : 'Reservar espacio' }}
+                </button>
             </form>
 
             <p v-if="mensaje" :class="mensajeError ? 'msg-error' : 'msg-ok'">{{ mensaje }}</p>
@@ -69,8 +75,11 @@
                         <strong>{{ nombreEspacio(r.espacio_id) }}</strong>
                         <button class="btn-cancelar" @click="cancelarReserva(r.id)">Cancelar</button>
                     </div>
-                    <small>📅 {{ r.fecha }} | 🕐 {{ r.hora_inicio }} - {{ r.hora_fin }}</small>
-                    <p>{{ r.motivo }}</p>
+                    <small>
+                        📅 {{ r.fecha_reserva }} |
+                        🕐 {{ nombreHorario(r.horario_id) }}
+                    </small>
+                    <p>{{ r.motivo_reserva }}</p>
                 </div>
             </div>
         </div>
@@ -78,97 +87,149 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import axios from "axios";
+import { URL } from "@/variablesGlobales";
 
-const API_URL = "http://100.27.173.196:3000";
+const API_URL = URL;
 const ZUSUARIO = "ivan";
 
-const espacios = ref([]);
-const reservas = ref([]);
+// ── Estado ────────────────────────────────────────────────
+const espacios            = ref([]);
+const horarios            = ref([]);
+const misReservas         = ref([]);
 const espacioSeleccionado = ref(null);
-const mensaje = ref("");
-const mensajeError = ref(false);
+const mensaje             = ref("");
+const mensajeError        = ref(false);
+const enviando            = ref(false);
+const cargandoHorarios    = ref(false);
+const errorHorarios       = ref(false);
 
 const usuario = JSON.parse(sessionStorage.getItem("usuario") || "{}");
-
-const hoy = new Date().toISOString().slice(0, 10);
-
-const horas = [
-    "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
-    "11:00", "11:30", "12:00", "12:30", "13:00", "13:30",
-    "14:00", "14:30", "15:00", "15:30", "16:00", "16:30",
-    "17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00"
-];
+const hoy     = new Date().toISOString().slice(0, 10);
 
 const reserva = ref({
-    espacio_id: "",
-    fecha: "",
-    hora_inicio: "",
-    hora_fin: "",
-    motivo: ""
+    espacio_id:     "",
+    horario_id:     "",
+    usuario_login:  usuario.login || "",
+    fecha_reserva:  "",
+    motivo_reserva: "",
+    zfecha:         hoy,
+    zusuario:       ZUSUARIO
 });
 
+// ── Carga inicial ─────────────────────────────────────────
 onMounted(async () => {
+    await cargarEspacios();
+    await cargarHorarios();
+    await cargarMisReservas();
+});
+
+const cargarEspacios = async () => {
     try {
-        const response = await axios.get(`${API_URL}/espacios?zusuario=${ZUSUARIO}`);
-        espacios.value = response.data;
+        const res = await axios.get(`${API_URL}/espacios?zusuario=${ZUSUARIO}`);
+        espacios.value = res.data;
     } catch (error) {
         console.error("Error cargando espacios:", error);
     }
-});
-
-const seleccionarEspacio = () => {
-    espacioSeleccionado.value = espacios.value.find(e => e.id === reserva.value.espacio_id) || null;
 };
 
-const misReservas = computed(() =>
-    reservas.value.filter(r => r.reservadoPor === usuario.login)
-);
+const cargarHorarios = async () => {
+    cargandoHorarios.value = true;
+    errorHorarios.value    = false;
+    try {
+        const res = await axios.get(`${API_URL}/horarios?zusuario=${ZUSUARIO}`);
+        horarios.value = res.data;
+    } catch (error) {
+        console.error("Error cargando horarios:", error);
+        errorHorarios.value = true;
+    } finally {
+        cargandoHorarios.value = false;
+    }
+};
+
+const cargarMisReservas = async () => {
+    try {
+        const res = await axios.get(`${API_URL}/reservas?zusuario=${ZUSUARIO}`);
+        misReservas.value = res.data.filter(r => r.usuario_login === usuario.login);
+    } catch (error) {
+        console.error("Error cargando reservas:", error);
+    }
+};
+
+// ── Helpers ───────────────────────────────────────────────
+const seleccionarEspacio = () => {
+    espacioSeleccionado.value =
+        espacios.value.find(e => e.id === reserva.value.espacio_id) || null;
+};
 
 const nombreEspacio = (id) => {
     const e = espacios.value.find(e => e.id === id);
     return e ? e.nombre : id;
 };
 
-const hacerReserva = () => {
-    // Validar que hora fin sea posterior a hora inicio
-    if (reserva.value.hora_inicio >= reserva.value.hora_fin) {
-        mensaje.value = "❌ La hora de fin debe ser posterior a la hora de inicio";
-        mensajeError.value = true;
-        return;
-    }
-
-    // Comprobar conflicto de reservas
-    const conflicto = reservas.value.find(r =>
-        r.espacio_id === reserva.value.espacio_id &&
-        r.fecha === reserva.value.fecha &&
-        r.hora_inicio < reserva.value.hora_fin &&
-        r.hora_fin > reserva.value.hora_inicio
-    );
-
-    if (conflicto) {
-        mensaje.value = `❌ El espacio ya está reservado de ${conflicto.hora_inicio} a ${conflicto.hora_fin} ese día`;
-        mensajeError.value = true;
-        return;
-    }
-
-    reservas.value.push({
-        id: Date.now(),
-        ...reserva.value,
-        reservadoPor: usuario.login
-    });
-
-    mensaje.value = "✅ Espacio reservado correctamente";
-    mensajeError.value = false;
-    reserva.value = { espacio_id: "", fecha: "", hora_inicio: "", hora_fin: "", motivo: "" };
-    espacioSeleccionado.value = null;
-
-    setTimeout(() => mensaje.value = "", 3000);
+const nombreHorario = (id) => {
+    const h = horarios.value.find(h => h.id === id);
+    return h ? `${h.nombre} (${h.hora_inicio} - ${h.hora_fin})` : id;
 };
 
-const cancelarReserva = (id) => {
-    reservas.value = reservas.value.filter(r => r.id !== id);
+// ── Hacer reserva ─────────────────────────────────────────
+const hacerReserva = async () => {
+    enviando.value     = true;
+    mensaje.value      = "";
+    mensajeError.value = false;
+
+    try {
+        reserva.value.zfecha       = new Date().toISOString().slice(0, 10);
+        reserva.value.usuario_login = usuario.login || ZUSUARIO;
+
+        const response = await axios.post(
+            `${API_URL}/reservas?zusuario=${ZUSUARIO}`,
+            reserva.value
+        );
+
+        console.log("Reserva creada:", response.data);
+        mensaje.value = "✅ Espacio reservado correctamente";
+
+        await cargarMisReservas();
+
+        // Limpia el formulario
+        reserva.value = {
+            espacio_id:     "",
+            horario_id:     "",
+            usuario_login:  usuario.login || "",
+            fecha_reserva:  "",
+            motivo_reserva: "",
+            zfecha:         new Date().toISOString().slice(0, 10),
+            zusuario:       ZUSUARIO
+        };
+        espacioSeleccionado.value = null;
+
+        setTimeout(() => mensaje.value = "", 3000);
+
+    } catch (error) {
+        console.error("Error al reservar:", error.response?.data);
+        mensajeError.value = true;
+        const errorServidor = error.response?.data?.error || error.response?.data?.motivo;
+        mensaje.value = errorServidor ? `❌ ${errorServidor}` : "❌ No se pudo realizar la reserva";
+    } finally {
+        enviando.value = false;
+    }
+};
+
+// ── Cancelar reserva ──────────────────────────────────────
+const cancelarReserva = async (id) => {
+    try {
+        await axios.delete(`${API_URL}/reservas/${id}?zusuario=${ZUSUARIO}`);
+        await cargarMisReservas();
+        mensaje.value      = "✅ Reserva cancelada";
+        mensajeError.value = false;
+        setTimeout(() => mensaje.value = "", 2000);
+    } catch (error) {
+        console.error("Error al cancelar:", error.response?.data);
+        mensaje.value      = "❌ No se pudo cancelar la reserva";
+        mensajeError.value = true;
+    }
 };
 </script>
 
@@ -197,12 +258,6 @@ h2, h3 { color: #2c3e50; }
     display: flex;
     flex-direction: column;
     gap: 4px;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
 }
 
 label {
@@ -248,10 +303,12 @@ button[type="submit"] {
     transition: background-color 0.2s;
 }
 
-button[type="submit"]:hover { background-color: #369870; }
+button[type="submit"]:hover:not(:disabled) { background-color: #369870; }
+button[type="submit"]:disabled { background-color: #aaa; cursor: not-allowed; }
 
-.msg-ok    { color: #42b983; font-weight: bold; }
-.msg-error { color: #e74c3c; font-weight: bold; }
+.msg-ok       { color: #42b983; font-weight: bold; }
+.msg-error    { color: #e74c3c; font-weight: bold; }
+.msg-cargando { color: #888; font-size: 0.85rem; }
 
 .lista { display: flex; flex-direction: column; gap: 12px; }
 
@@ -285,5 +342,5 @@ button[type="submit"]:hover { background-color: #369870; }
 .btn-cancelar:hover { background-color: #c0392b; }
 
 small { color: #888; font-size: 0.8rem; }
-p { color: #555; font-size: 0.9rem; }
+p     { color: #555; font-size: 0.9rem; }
 </style>

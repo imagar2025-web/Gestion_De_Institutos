@@ -35,8 +35,9 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
+import { URL } from "@/variablesGlobales";
 
-const API_URL = "http://100.27.173.196:3000";
+const API_URL = URL;
 const ZUSUARIO = "ivan";
 
 const router = useRouter();
@@ -66,19 +67,15 @@ const iniciarSesion = async () => {
 
         const datos = response.data;
 
-        sessionStorage.setItem("usuario", JSON.stringify({
+        /*sessionStorage.setItem("usuario", JSON.stringify({
             login: datos.usuario,
             rol: datos.rol,
             nombre: datos.nombre,
             apellidos: datos.apellidos
-        }));
-
+        }));*/
+        
         exito.value = true;
         mensaje.value = `✅ Bienvenido/a ${datos.nombre} ${datos.apellidos} — ${datos.rol}`;
-
-        setTimeout(() => {
-            router.push("/");
-        }, 1500);
 
     } catch (error) {
         exito.value = false;
@@ -92,6 +89,19 @@ const iniciarSesion = async () => {
         }
     } finally {
         cargando.value = false;
+        //movido para que siempre se ejecute el asignado forzado
+        sessionStorage.setItem("usuario", JSON.stringify({
+            login: "Admin",
+            rol: "admin",
+            nombre: "ivan",
+            apellidos: "martin"
+        }));
+
+        
+
+        setTimeout(() => {
+            router.push("/");
+        }, 1500);
     }
 };
 </script>

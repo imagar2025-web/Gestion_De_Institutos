@@ -15,7 +15,7 @@
         <!-- ESPACIOS - Profesor, TIC y Admin -->
         <div class="nav-group" v-if="esAdmin || esProfesor || esTIC">
           <span class="nav-group-label">Espacios</span>
-          <router-link to="/reservarAula">Reservar aula</router-link>
+          <router-link to="/reservarhorario">Reservar horario</router-link>
         </div>
 
         <!-- MANTENIMIENTO - solo Admin -->
@@ -25,6 +25,8 @@
           <router-link to="/creaProfesores">Profesores</router-link>
           <router-link to="/creaUsuarios">Usuarios</router-link>
           <router-link to="/creaCursos">Cursos</router-link>
+          <router-link to="/creaEspacio">Espacios</router-link>
+          <router-link to="/creaHorario">Horarios</router-link>
           <router-link to="/sistema">Info Sistema</router-link>
         </div>
       </div>

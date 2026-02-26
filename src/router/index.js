@@ -15,7 +15,7 @@ const routes = [
   { path: '/resolverIncidencias', component: () => import('../components/ResolverIncidencia.vue') },
 
   // Espacios
-  { path: '/reservarAula', component: () => import('../components/ReservarEspacio.vue') },
+  { path: '/reservarhorario', component: () => import('../components/ReservarEspacio.vue') },
   { path: '/creEspacios', component: () => import('../components/CrearEspacios.vue') },
 
   // Mantenimiento
@@ -23,6 +23,8 @@ const routes = [
   { path: '/creaProfesores', component: () => import('../components/CrearProfesores.vue') },
   { path: '/creaUsuarios', component: () => import('../components/CrearUsuario.vue') },
   { path: '/creaCursos', component: () => import('../components/CrearCursos.vue') },
+  { path: '/creaEspacio', component: () => import('../components/CrearEspacios.vue') },
+  { path: '/creaHorario', component: () => import('../components/CrearHorarios.vue') },
 ]
 
 const router = createRouter({
@@ -42,5 +44,8 @@ router.beforeEach((to, from, next) => {
     next()
   }
 })
+/*router.beforeEach((to, from, next) => {
+  next();
+})*/
 
 export default router

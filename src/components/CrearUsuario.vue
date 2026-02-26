@@ -47,17 +47,18 @@
 <script setup>
 import { ref } from "vue";
 import axios from "axios";
+import { URL } from "@/variablesGlobales";
 
-const API_URL = "http://100.27.173.196:3000";
+const API_URL = URL;
 const z_usuario_query = "?zusuario=ivan";
 
 // --- ESTADOS PREDEFINIDOS ---
 const estadosDisponibles = [
-  { id: "ACT", nombre: "Activo", permite_acceso: true, descripcion: "Usuario con acceso total a la plataforma." },
-  { id: "BAJ", nombre: "Baja", permite_acceso: false, descripcion: "El usuario ya no pertenece al centro. Se mantienen datos pero no accede." },
-  { id: "BLOQ", nombre: "Bloqueado", permite_acceso: false, descripcion: "Acceso restringido por seguridad o por el administrador." },
-  { id: "GRAD", nombre: "Graduado", permite_acceso: false, descripcion: "Alumnos que han terminado su ciclo formativo." },
-  { id: "TEMP", nombre: "Baja Temporal", permite_acceso: false, descripcion: "Usuario fuera del sistema temporalmente (ej. enfermedad larga)." },
+  { id: "ACT_I", nombre: "Activo", permite_acceso: true, descripcion: "Usuario con acceso total a la plataforma." },
+  { id: "BAJ_I", nombre: "Baja", permite_acceso: false, descripcion: "El usuario ya no pertenece al centro. Se mantienen datos pero no accede." },
+  { id: "BLOQ_I", nombre: "Bloqueado", permite_acceso: false, descripcion: "Acceso restringido por seguridad o por el administrador." },
+  { id: "GRAD_I", nombre: "Graduado", permite_acceso: false, descripcion: "Alumnos que han terminado su ciclo formativo." },
+  { id: "TEMP_I", nombre: "Baja Temporal", permite_acceso: false, descripcion: "Usuario fuera del sistema temporalmente (ej. enfermedad larga)." },
 ];
 
 // --- ESTADO USUARIO ---
