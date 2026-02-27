@@ -27,6 +27,7 @@
           <router-link to="/creaCursos">Cursos</router-link>
           <router-link to="/creaEspacio">Espacios</router-link>
           <router-link to="/creaHorario">Horarios</router-link>
+          <router-link to="/creaES_INC">Estados_Incidencias</router-link>
           <router-link to="/sistema">Info Sistema</router-link>
         </div>
       </div>

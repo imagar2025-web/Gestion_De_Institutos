@@ -25,6 +25,7 @@ const routes = [
   { path: '/creaCursos', component: () => import('../components/CrearCursos.vue') },
   { path: '/creaEspacio', component: () => import('../components/CrearEspacios.vue') },
   { path: '/creaHorario', component: () => import('../components/CrearHorarios.vue') },
+  { path: '/creaES_INC', component: () => import('../components/CrearEstadosIncidencia.vue') },
 ]
 
 const router = createRouter({
