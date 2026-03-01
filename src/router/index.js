@@ -11,21 +11,27 @@ const routes = [
   { path: '/sistema', component: () => import('../components/InfoSistema.vue') },
 
   // Incidencias
-  { path: '/creaIncidencias', component: () => import('../components/CrearIncidencia.vue') },
+  { path: '/creaIncidencias',    component: () => import('../components/CrearIncidencia.vue') },
   { path: '/resolverIncidencias', component: () => import('../components/ResolverIncidencia.vue') },
+  { path: '/gestionIncidencias', component: () => import('../components/GestionIncidencias.vue') },
 
   // Espacios
-  { path: '/reservarhorario', component: () => import('../components/ReservarEspacio.vue') },
-  { path: '/creEspacios', component: () => import('../components/CrearEspacios.vue') },
+  { path: '/reservarAula', component: () => import('../components/ReservarEspacio.vue') },
+  { path: '/creEspacios',  component: () => import('../components/CrearEspacios.vue') },
 
-  // Mantenimiento
+  // Mantenimiento — ya existentes
   { path: '/creaDepartamento', component: () => import('../components/CrearDepartamento.vue') },
-  { path: '/creaProfesores', component: () => import('../components/CrearProfesores.vue') },
-  { path: '/creaUsuarios', component: () => import('../components/CrearUsuario.vue') },
-  { path: '/creaCursos', component: () => import('../components/CrearCursos.vue') },
-  { path: '/creaEspacio', component: () => import('../components/CrearEspacios.vue') },
-  { path: '/creaHorario', component: () => import('../components/CrearHorarios.vue') },
-  { path: '/creaES_INC', component: () => import('../components/CrearEstadosIncidencia.vue') },
+  { path: '/creaProfesores',   component: () => import('../components/CrearProfesores.vue') },
+  { path: '/creaUsuarios',     component: () => import('../components/CrearUsuario.vue') },
+  { path: '/creaCursos',       component: () => import('../components/CrearCursos.vue') },
+  { path: '/creaHorarios',     component: () => import('../components/CrearHorarios.vue') },
+  { path: '/creaEstadosIncidencia', component: () => import('../components/CrearEstadosIncidencia.vue') },
+
+  // Mantenimiento — nuevos
+  { path: '/creaRoles',   component: () => import('../components/CrearRoles.vue') },
+  { path: '/creaEtapas',  component: () => import('../components/CrearEtapas.vue') },
+  { path: '/creaTurnos',  component: () => import('../components/CrearTurnos.vue') },
+  { path: '/creaAlumnos', component: () => import('../components/CrearAlumnos.vue') },
 ]
 
 const router = createRouter({
@@ -45,8 +51,5 @@ router.beforeEach((to, from, next) => {
     next()
   }
 })
-/*router.beforeEach((to, from, next) => {
-  next();
-})*/
 
 export default router

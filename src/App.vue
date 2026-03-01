@@ -5,31 +5,38 @@
       <div class="nav-brand">🏫 Gestión de Institutos</div>
 
       <div class="nav-links">
+
         <!-- INCIDENCIAS - todos los roles -->
         <div class="nav-group">
           <span class="nav-group-label">Incidencias</span>
           <router-link to="/creaIncidencias">Crear</router-link>
           <router-link v-if="esAdmin || esTIC" to="/resolverIncidencias">Resolver</router-link>
+          <router-link v-if="esAdmin" to="/gestionIncidencias">Gestión completa</router-link>
         </div>
 
         <!-- ESPACIOS - Profesor, TIC y Admin -->
         <div class="nav-group" v-if="esAdmin || esProfesor || esTIC">
           <span class="nav-group-label">Espacios</span>
-          <router-link to="/reservarhorario">Reservar horario</router-link>
+          <router-link to="/reservarAula">Reservar aula</router-link>
+          <router-link v-if="esAdmin" to="/creEspacios">Gestionar</router-link>
         </div>
 
         <!-- MANTENIMIENTO - solo Admin -->
         <div class="nav-group" v-if="esAdmin">
           <span class="nav-group-label">Mantenimiento</span>
+          <router-link to="/creaRoles">Roles</router-link>
+          <router-link to="/creaEtapas">Etapas</router-link>
+          <router-link to="/creaTurnos">Turnos</router-link>
+          <router-link to="/creaHorarios">Horarios</router-link>
+          <router-link to="/creaEstadosIncidencia">Estados incidencia</router-link>
           <router-link to="/creaDepartamento">Departamentos</router-link>
           <router-link to="/creaProfesores">Profesores</router-link>
+          <router-link to="/creaAlumnos">Alumnos</router-link>
           <router-link to="/creaUsuarios">Usuarios</router-link>
           <router-link to="/creaCursos">Cursos</router-link>
-          <router-link to="/creaEspacio">Espacios</router-link>
-          <router-link to="/creaHorario">Horarios</router-link>
-          <router-link to="/creaES_INC">Estados_Incidencias</router-link>
           <router-link to="/sistema">Info Sistema</router-link>
         </div>
+
       </div>
 
       <!-- Usuario logado + cerrar sesión -->
@@ -48,13 +55,11 @@ import { ref, computed, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 
 const router = useRouter();
-const route = useRoute();
+const route  = useRoute();
 
-const usuario = ref({ login: "", rol: "", nombre: "", apellidos: "" });
+const usuario      = ref({ login: "", rol: "", nombre: "", apellidos: "" });
 const usuarioLogado = ref(false);
 
-// Recarga el estado cada vez que cambia la ruta
-// (así detecta cuando el Login.vue guarda en sessionStorage)
 watch(() => route.path, () => {
   cargarSesion();
 });
@@ -66,15 +71,15 @@ onMounted(() => {
 const cargarSesion = () => {
   const datos = sessionStorage.getItem("usuario");
   if (datos) {
-    usuario.value = JSON.parse(datos);
+    usuario.value      = JSON.parse(datos);
     usuarioLogado.value = true;
   } else {
     usuarioLogado.value = false;
   }
 };
 
-const esAdmin = computed(() => usuario.value.rol?.toLowerCase().includes("admin"));
-const esTIC = computed(() => usuario.value.rol?.toLowerCase().includes("tic"));
+const esAdmin    = computed(() => usuario.value.rol?.toLowerCase().includes("admin"));
+const esTIC      = computed(() => usuario.value.rol?.toLowerCase().includes("tic"));
 const esProfesor = computed(() => usuario.value.rol?.toLowerCase().includes("prof"));
 
 const cerrarSesion = () => {

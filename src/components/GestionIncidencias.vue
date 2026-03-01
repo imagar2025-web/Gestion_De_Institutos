@@ -1,0 +1,294 @@
+<template>
+    <div class="page">
+        <div class="card">
+
+            <h3>{{ modoEdicion ? '✏️ Editar Incidencia' : '➕ Crear Incidencia' }}</h3>
+
+            <form @submit.prevent="modoEdicion ? actualizarIncidencia() : insertarIncidencia()">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>ID</label>
+                        <input type="number" v-model="incidencia.id" :disabled="modoEdicion" required>
+                        <small v-if="modoEdicion" class="hint">El ID no se puede modificar</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Espacio</label>
+                        <select v-model="incidencia.espacio_id" required>
+                            <option value="">-- Selecciona un espacio --</option>
+                            <option v-for="e in espacios" :key="e.id" :value="e.id">
+                                {{ e.nombre }} — Planta {{ e.ubicacion_planta }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Usuario que la reporta</label>
+                        <select v-model="incidencia.usuario_login" required>
+                            <option value="">-- Selecciona un usuario --</option>
+                            <option v-for="u in usuarios" :key="u.login" :value="u.login">
+                                {{ u.login }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Estado</label>
+                        <select v-model="incidencia.estado_incidencia_id" required>
+                            <option value="">-- Selecciona un estado --</option>
+                            <option v-for="e in estadosIncidencia" :key="e.id" :value="e.id">
+                                {{ e.id }} — {{ e.nombre }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Descripción del problema</label>
+                    <textarea v-model="incidencia.descripcion_problema" rows="3" required></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Responsable resolución</label>
+                        <input v-model="incidencia.responsable_resolucion_id">
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha resolución</label>
+                        <input type="date" v-model="incidencia.fecha_resolucion">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Comentarios resolución</label>
+                    <textarea v-model="incidencia.comentarios_resolucion" rows="2"></textarea>
+                </div>
+
+                <div class="form-botones">
+                    <button type="submit" class="btn-primary">
+                        {{ modoEdicion ? '💾 Guardar cambios' : '➕ Insertar incidencia' }}
+                    </button>
+                    <button v-if="modoEdicion" type="button" class="btn-secundario" @click="cancelarEdicion">
+                        ✖ Cancelar
+                    </button>
+                </div>
+            </form>
+
+            <p v-if="mensaje" :class="mensajeError ? 'msg-error' : 'msg-ok'">{{ mensaje }}</p>
+
+            <div class="tabla-header">
+                <h3>📋 Incidencias registradas</h3>
+                <button class="btn-refrescar" @click="cargarIncidencias">🔄 Refrescar</button>
+            </div>
+
+            <p v-if="cargando" class="msg-cargando">⏳ Cargando...</p>
+            <div v-else-if="incidencias.length === 0" class="vacio">No hay incidencias registradas</div>
+            <div v-else class="tabla-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Espacio</th>
+                            <th>Usuario</th>
+                            <th>Descripción</th>
+                            <th>Estado</th>
+                            <th>Responsable</th>
+                            <th>Fecha resolución</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="i in incidencias" :key="i.id"
+                            :class="{ 'fila-editando': modoEdicion && incidencia.id == i.id }">
+                            <td>{{ i.id }}</td>
+                            <td>{{ i.espacio_id }}</td>
+                            <td>{{ i.usuario_login }}</td>
+                            <td class="truncar">{{ i.descripcion_problema }}</td>
+                            <td>
+                                <span class="badge" :class="i.estado_incidencia_id === 'REST' ? 'badge-ok' : 'badge-pending'">
+                                    {{ i.estado_incidencia_id }}
+                                </span>
+                            </td>
+                            <td>{{ i.responsable_resolucion_id || '—' }}</td>
+                            <td>{{ i.fecha_resolucion ? i.fecha_resolucion.slice(0,10) : '—' }}</td>
+                            <td class="acciones">
+                                <button class="btn-editar" @click="cargarEnFormulario(i)">✏️ Editar</button>
+                                <button class="btn-eliminar" @click="eliminarIncidencia(i.id)">🗑️ Eliminar</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from "vue";
+import axios from "axios";
+import { URL } from "@/variablesGlobales";
+
+const API_URL = URL;
+const Z       = "?zusuario=ivan";
+
+const incidencias       = ref([]);
+const espacios          = ref([]);
+const usuarios          = ref([]);
+const estadosIncidencia = ref([]);
+const mensaje           = ref("");
+const mensajeError      = ref(false);
+const cargando          = ref(false);
+const modoEdicion       = ref(false);
+
+const incidenciaVacia = () => ({
+    id:                        "",
+    espacio_id:                "",
+    usuario_login:             "",
+    descripcion_problema:      "",
+    estado_incidencia_id:      "PENT",
+    responsable_resolucion_id: "",
+    comentarios_resolucion:    "",
+    fecha_resolucion:          "",
+    zfecha:                    new Date().toISOString().slice(0, 10),
+    zusuario:                  "ivan"
+});
+
+const incidencia = ref(incidenciaVacia());
+
+onMounted(async () => {
+    await Promise.all([cargarEspacios(), cargarUsuarios(), cargarEstadosIncidencia(), cargarIncidencias()]);
+});
+
+const cargarEspacios = async () => {
+    try {
+        const res = await axios.get(`${API_URL}/espacios${Z}`);
+        espacios.value = res.data;
+    } catch (error) { console.error("Error cargando espacios:", error); }
+};
+
+const cargarUsuarios = async () => {
+    try {
+        const res = await axios.get(`${API_URL}/usuarios${Z}`);
+        usuarios.value = res.data;
+    } catch (error) { console.error("Error cargando usuarios:", error); }
+};
+
+const cargarEstadosIncidencia = async () => {
+    try {
+        const res = await axios.get(`${API_URL}/estados_incidencia${Z}`);
+        estadosIncidencia.value = res.data;
+    } catch (error) { console.error("Error cargando estados incidencia:", error); }
+};
+
+const cargarIncidencias = async () => {
+    cargando.value = true;
+    try {
+        const res = await axios.get(`${API_URL}/incidencias${Z}`);
+        incidencias.value = res.data;
+    } catch (error) {
+        mostrarMensaje("❌ No se pudieron cargar las incidencias", true);
+    } finally {
+        cargando.value = false;
+    }
+};
+
+const insertarIncidencia = async () => {
+    try {
+        mostrarMensaje("Enviando...", false);
+        await axios.post(`${API_URL}/incidencias${Z}`, incidencia.value);
+        mostrarMensaje("✅ Incidencia creada correctamente", false);
+        incidencia.value = incidenciaVacia();
+        await cargarIncidencias();
+    } catch (error) {
+        console.error("Error POST:", error.response?.data);
+        mostrarMensaje("❌ El servidor rechazó los datos", true);
+    }
+};
+
+const cargarEnFormulario = (i) => {
+    incidencia.value  = {
+        ...i,
+        fecha_resolucion: i.fecha_resolucion ? i.fecha_resolucion.slice(0, 10) : "",
+        zfecha:           new Date().toISOString().slice(0, 10),
+        zusuario:         "ivan"
+    };
+    modoEdicion.value = true;
+    mensaje.value     = "";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+const actualizarIncidencia = async () => {
+    try {
+        mostrarMensaje("Guardando...", false);
+        await axios.put(`${API_URL}/incidencias/${incidencia.value.id}${Z}`, incidencia.value);
+        mostrarMensaje("✅ Incidencia actualizada correctamente", false);
+        cancelarEdicion();
+        await cargarIncidencias();
+    } catch (error) {
+        console.error("Error PUT:", error.response?.data);
+        mostrarMensaje("❌ No se pudo actualizar la incidencia", true);
+    }
+};
+
+const cancelarEdicion = () => {
+    incidencia.value  = incidenciaVacia();
+    modoEdicion.value = false;
+    mensaje.value     = "";
+};
+
+const eliminarIncidencia = async (id) => {
+    if (!confirm(`¿Seguro que quieres eliminar la incidencia #${id}?`)) return;
+    try {
+        await axios.delete(`${API_URL}/incidencias/${id}${Z}`);
+        mostrarMensaje("✅ Incidencia eliminada correctamente", false);
+        if (modoEdicion.value && incidencia.value.id == id) cancelarEdicion();
+        await cargarIncidencias();
+    } catch (error) {
+        console.error("Error DELETE:", error.response?.data);
+        mostrarMensaje("❌ No se pudo eliminar la incidencia", true);
+    }
+};
+
+const mostrarMensaje = (texto, esError) => {
+    mensaje.value      = texto;
+    mensajeError.value = esError;
+};
+</script>
+
+<style scoped>
+.page { padding: 32px; display: flex; justify-content: center; }
+.card { background: white; border-radius: 12px; padding: 32px; width: 100%; max-width: 1100px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 20px; }
+h3 { color: #2c3e50; margin: 0; }
+.form-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+label { font-size: 0.85rem; font-weight: bold; color: #444; }
+input, select, textarea { padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; font-family: inherit; transition: border-color 0.2s; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: #42b983; }
+input:disabled { background: #f0f0f0; color: #888; cursor: not-allowed; }
+.hint { color: #aaa; font-size: 0.78rem; }
+.form-botones { display: flex; gap: 10px; margin-top: 4px; }
+.btn-primary { padding: 10px 20px; background-color: #42b983; color: white; border: none; border-radius: 6px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+.btn-primary:hover { background-color: #369870; }
+.btn-secundario { padding: 10px 20px; background-color: #95a5a6; color: white; border: none; border-radius: 6px; font-size: 0.95rem; font-weight: bold; cursor: pointer; }
+.btn-secundario:hover { background-color: #7f8c8d; }
+.btn-refrescar { padding: 6px 14px; background-color: #3498db; color: white; border: none; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+.btn-refrescar:hover { background-color: #2980b9; }
+.msg-ok { color: #42b983; font-weight: bold; }
+.msg-error { color: #e74c3c; font-weight: bold; }
+.msg-cargando { color: #888; font-size: 0.9rem; }
+.tabla-header { display: flex; justify-content: space-between; align-items: center; }
+.tabla-wrapper { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+thead tr { background-color: #d5e8f0; }
+th { padding: 10px 14px; text-align: left; font-size: 0.82rem; color: #2c3e50; font-weight: bold; text-transform: uppercase; letter-spacing: 0.04em; }
+td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; color: #555; }
+tbody tr:hover { background-color: #f9f9f9; }
+.fila-editando { background-color: #fff8e1 !important; border-left: 3px solid #f39c12; }
+.truncar { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.acciones { display: flex; gap: 8px; }
+.badge { font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; font-weight: bold; }
+.badge-ok      { background: #d4f5e9; color: #27ae60; }
+.badge-pending { background: #ffecd2; color: #e67e22; }
+.btn-editar { padding: 4px 10px; background-color: #f39c12; color: white; border: none; border-radius: 4px; font-size: 0.8rem; cursor: pointer; }
+.btn-editar:hover { background-color: #d68910; }
+.btn-eliminar { padding: 4px 10px; background-color: #e74c3c; color: white; border: none; border-radius: 4px; font-size: 0.8rem; cursor: pointer; }
+.btn-eliminar:hover { background-color: #c0392b; }
+.vacio { text-align: center; color: #aaa; padding: 30px 0; font-size: 0.95rem; }
+</style>
