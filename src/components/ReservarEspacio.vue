@@ -121,7 +121,7 @@ const reserva = ref({
     zusuario: ZUSUARIO
 });
 
-// ── Carga inicial ─────────────────────────────────────────
+// Carga inicial 
 onMounted(async () => {
     await cargarEspacios();
     await cargarHorarios();
@@ -200,7 +200,7 @@ watch(() => reserva.value.espacio_id, () => {
     reserva.value.horario_id = "";
 });
 
-// ── Helpers ───────────────────────────────────────────────
+// Helpers 
 const seleccionarEspacio = () => {
     espacioSeleccionado.value =
         espacios.value.find(e => e.id === reserva.value.espacio_id) || null;
@@ -216,7 +216,7 @@ const nombreHorario = (id) => {
     return h ? `${h.nombre} (${h.hora_inicio} - ${h.hora_fin})` : id;
 };
 
-// ── Hacer reserva ─────────────────────────────────────────
+// Hacer reserva
 const hacerReserva = async () => {
     enviando.value = true;
     mensaje.value = "";
@@ -261,7 +261,7 @@ const hacerReserva = async () => {
     }
 };
 
-// ── Cancelar reserva ──────────────────────────────────────
+//  Cancelar reserva
 const cancelarReserva = async (id) => {
     try {
         await axios.delete(`${API_URL}/reservas/${id}?zusuario=${ZUSUARIO}`);

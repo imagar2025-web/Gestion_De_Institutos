@@ -257,7 +257,7 @@ import { URL } from '@/variablesGlobales';
 const API_URL = URL;
 const Z = "?zusuario=ivan";
 
-// ── Datos ──────────────────────────────────────────────────
+// Datos 
 const alumnos = ref([]);
 const profesores = ref([]);
 const cursos = ref([]);
@@ -277,7 +277,7 @@ const cargando = reactive({
     usuarios: false,
 });
 
-// ── GET genérico ───────────────────────────────────────────
+//  GET genérico
 const obtener = async (ruta, variable) => {
     cargando[ruta] = true;
     try {
@@ -292,7 +292,7 @@ const obtener = async (ruta, variable) => {
     }
 };
 
-// ── Carga inicial — todas las tablas a la vez ──────────────
+// Carga inicial  todas las tablas a la vez
 onMounted(() => {
     obtener("alumnos", alumnos);
     obtener("profesores", profesores);

@@ -70,7 +70,7 @@ const mensajeError      = ref(false);
 const cargando          = ref(false);
 const enviando          = ref(false);
 
-// ID del estado pendiente — se confirma al cargar de la API
+
 let ID_PENT = "PENT";
 let ID_PROC = "PROC";
 let ID_REST = "REST";
@@ -156,7 +156,7 @@ const enviarIncidencia = async () => {
     }
 };
 
-// Helpers visuales — misma lógica que ResolverIncidencia
+
 const nombreEstado = (id) => estadosIncidencia.value.find(e => e.id === id)?.nombre || id;
 
 const claseEstado = (id) => {

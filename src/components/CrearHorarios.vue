@@ -96,7 +96,7 @@ import { URL } from "@/variablesGlobales";
 const API_URL = URL;
 const Z      = "?zusuario=ivan";
 
-// ── Estado ─────────────────────────────────────────────────
+// Estado 
 const horarios      = ref([]);
 const mensajeHorario = ref("");
 const mensajeError  = ref(false);
@@ -115,10 +115,10 @@ const horarioVacio = () => ({
 
 const horario = ref(horarioVacio());
 
-// ── Carga inicial ──────────────────────────────────────────
+// Carga inicial 
 onMounted(() => cargarHorarios());
 
-// ── GET ────────────────────────────────────────────────────
+//  GET
 const cargarHorarios = async () => {
     cargando.value = true;
     try {
@@ -131,7 +131,7 @@ const cargarHorarios = async () => {
     }
 };
 
-// ── POST ───────────────────────────────────────────────────
+//  POST 
 const insertarHorario = async () => {
     try {
         mostrarMensaje("Enviando...", false);
@@ -149,7 +149,7 @@ const insertarHorario = async () => {
     }
 };
 
-// ── PUT ────────────────────────────────────────────────────
+//PUT
 const cargarEnFormulario = (h) => {
     // Copia los datos de la fila al formulario y activa modo edición
     horario.value = { ...h, zfecha: new Date().toISOString().slice(0, 10), zusuario: "ivan" };
@@ -178,7 +178,7 @@ const cancelarEdicion = () => {
     mensajeHorario.value = "";
 };
 
-// ── DELETE ─────────────────────────────────────────────────
+// DELETE 
 const eliminarHorario = async (id) => {
     if (!confirm(`¿Seguro que quieres eliminar el horario "${id}"?`)) return;
     try {
@@ -193,7 +193,7 @@ const eliminarHorario = async (id) => {
     }
 };
 
-// ── Helper mensaje ─────────────────────────────────────────
+// Helper mensaje 
 const mostrarMensaje = (texto, esError) => {
     mensajeHorario.value = texto;
     mensajeError.value   = esError;

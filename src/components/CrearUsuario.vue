@@ -2,9 +2,7 @@
     <div class="page">
         <div class="card">
 
-            <!-- ══════════════════════════════════════════ -->
-            <!-- SECCIÓN 1: ESTADOS DE USUARIO             -->
-            <!-- ══════════════════════════════════════════ -->
+            
             <h3>{{ modoEdicionEstado ? '✏️ Editar Estado' : '➕ Crear Estado de Usuario' }}</h3>
 
             <form @submit.prevent="modoEdicionEstado ? actualizarEstado() : insertarEstado()">
@@ -96,9 +94,7 @@
 
             <hr class="separador">
 
-            <!-- ══════════════════════════════════════════ -->
-            <!-- SECCIÓN 2: USUARIOS                       -->
-            <!-- ══════════════════════════════════════════ -->
+           
             <h3>{{ modoEdicionUsuario ? '✏️ Editar Usuario' : '➕ Crear Usuario' }}</h3>
             <p class="aviso">⚠️ Crea primero el estado antes de insertar el usuario</p>
 
@@ -201,7 +197,7 @@ import { URL } from "@/variablesGlobales";
 const API_URL = URL;
 const Z = "?zusuario=ivan";
 
-// ── Estados predefinidos (plantillas) ─────────────────────
+// Estados predefinidos (plantillas) 
 const estadosDisponibles = [
     { id: "ACT",  nombre: "Activo",        permite_acceso: true,  descripcion: "Usuario con acceso total a la plataforma." },
     { id: "BAJ",  nombre: "Baja",          permite_acceso: false, descripcion: "El usuario ya no pertenece al centro." },
@@ -210,7 +206,7 @@ const estadosDisponibles = [
     { id: "TEMP", nombre: "Baja Temporal", permite_acceso: false, descripcion: "Usuario fuera del sistema temporalmente." },
 ];
 
-// ── Estado reactivo — Estados ──────────────────────────────
+// Estado reactivo  Estados
 const estados            = ref([]);
 const estadoSeleccionado = ref("");
 const mensajeEstado      = ref("");
@@ -229,7 +225,7 @@ const estadoVacio = () => ({
 
 const estado = ref(estadoVacio());
 
-// ── Estado reactivo — Usuarios ─────────────────────────────
+// Estado reactivo — Usuarios 
 const usuarios             = ref([]);
 const mensajeUsuario       = ref("");
 const mensajeErrorUsuario  = ref(false);
@@ -249,15 +245,12 @@ const usuarioVacio = () => ({
 
 const usuario = ref(usuarioVacio());
 
-// ── Carga inicial ──────────────────────────────────────────
+// Carga inicial
 onMounted(async () => {
     await cargarEstados();
     await cargarUsuarios();
 });
 
-// ══════════════════════════════════════════════════════════
-// CRUD ESTADOS
-// ══════════════════════════════════════════════════════════
 
 const cargarEstados = async () => {
     cargandoEstados.value = true;
@@ -335,9 +328,6 @@ const eliminarEstado = async (id) => {
     }
 };
 
-// ══════════════════════════════════════════════════════════
-// CRUD USUARIOS
-// ══════════════════════════════════════════════════════════
 
 const cargarUsuarios = async () => {
     cargandoUsuarios.value = true;
@@ -404,7 +394,7 @@ const eliminarUsuario = async (login) => {
     }
 };
 
-// ── Helpers ────────────────────────────────────────────────
+//  Helpers 
 const mostrarMensajeEstado   = (t, e) => { mensajeEstado.value = t; mensajeErrorEstado.value = e; };
 const mostrarMensajeUsuario  = (t, e) => { mensajeUsuario.value = t; mensajeErrorUsuario.value = e; };
 </script>

@@ -69,7 +69,7 @@
 
             <p v-if="mensaje" :class="mensajeError ? 'msg-error' : 'msg-ok'">{{ mensaje }}</p>
 
-            <!-- TABLA -->
+            
             <div class="tabla-header">
                 <h3>📋 Cursos registrados</h3>
                 <button class="btn-refrescar" @click="cargarCursos">🔄 Refrescar</button>
@@ -155,7 +155,7 @@ onMounted(async () => {
     await Promise.all([cargarProfesores(), cargarEspacios(), cargarCursos()]);
 });
 
-// GETs auxiliares para los selectores
+
 const cargarProfesores = async () => {
     try {
         const res = await axios.get(`${API_URL}/profesores${Z}`);
@@ -174,7 +174,7 @@ const cargarEspacios = async () => {
     }
 };
 
-// GET cursos
+
 const cargarCursos = async () => {
     cargando.value = true;
     try {

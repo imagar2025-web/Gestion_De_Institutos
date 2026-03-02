@@ -67,12 +67,12 @@ const iniciarSesion = async () => {
 
         const datos = response.data;
 
-        /*sessionStorage.setItem("usuario", JSON.stringify({
+        sessionStorage.setItem("usuario", JSON.stringify({
             login: datos.usuario,
             rol: datos.rol,
             nombre: datos.nombre,
             apellidos: datos.apellidos
-        }));*/
+        }));
         
         exito.value = true;
         mensaje.value = `✅ Bienvenido/a ${datos.nombre} ${datos.apellidos} — ${datos.rol}`;
@@ -90,12 +90,12 @@ const iniciarSesion = async () => {
     } finally {
         cargando.value = false;
         //movido para que siempre se ejecute el asignado forzado
-        sessionStorage.setItem("usuario", JSON.stringify({
+       /* sessionStorage.setItem("usuario", JSON.stringify({
             login: "Admin",
             rol: "admin",
             nombre: "ivan",
             apellidos: "martin"
-        }));
+        }));*/
 
         
 
