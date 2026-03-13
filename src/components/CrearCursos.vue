@@ -121,18 +121,31 @@
 </template>
 
 <script setup>
+
+// ─────────────────────────────────────────────────────────────
+// CrearCursos.vue  —  CRUD completo de Curso
+// Cursos académicos. Relaciona etapa, turno, tutor y aula.
+// Patrón común a todos los CRUDs del proyecto:
+//   - GET al montar → lista en tabla
+//   - POST formulario → insertar
+//   - PUT fila → cargarEnFormulario() activa modoEdicion, luego actualizar
+//   - DELETE fila → confirmar con window.confirm(), luego eliminar
+//   - modoEdicion: controla si el formulario está en modo crear o editar
+//   - PK: id (deshabilitado en edición, no se puede cambiar)
+// ─────────────────────────────────────────────────────────────
+
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { URL } from "@/variablesGlobales";
 
-const API_URL = URL;
-const Z = "?zusuario=ivan";
+const API_URL = URL;  // URL base de la API
+const Z = "?zusuario=ivan";  // Parámetro de auditoría requerido por todos los endpoints
 
 const cursos      = ref([]);
 const profesores  = ref([]);
 const espacios    = ref([]);
 const mensaje     = ref("");
-const mensajeError = ref(false);
+const mensajeError = ref(false);  // Distingue mensaje de éxito (false=verde) de error (true=rojo)
 const cargando    = ref(false);
 const modoEdicion = ref(false);
 
@@ -145,18 +158,18 @@ const cursoVacio = () => ({
     anio_academico:"",
     tutor_id:      "",
     aula_id:       "",
-    zfecha:        new Date().toISOString().slice(0, 10),
-    zusuario:      "ivan"
+    zfecha:        new Date().toISOString().slice(0, 10),  // Fecha de auditoría YYYY-MM-DD
+    zusuario:      "ivan"  // Usuario que realiza la operación (requerido por la API)
 });
 
 const curso = ref(cursoVacio());
 
-onMounted(async () => {
-    await Promise.all([cargarProfesores(), cargarEspacios(), cargarCursos()]);
+onMounted(async () => {  // Carga inicial de datos al montar el componente
+    await Promise.all([cargarProfesores(), cargarEspacios(), cargarCursos()]);  // Lanza varias peticiones en paralelo para reducir el tiempo de espera
 });
 
 
-const cargarProfesores = async () => {
+const cargarProfesores = async () => {  // GET → carga datos de la API y rellena la tabla
     try {
         const res = await axios.get(`${API_URL}/profesores${Z}`);
         profesores.value = res.data;
@@ -165,7 +178,7 @@ const cargarProfesores = async () => {
     }
 };
 
-const cargarEspacios = async () => {
+const cargarEspacios = async () => {  // GET → carga datos de la API y rellena la tabla
     try {
         const res = await axios.get(`${API_URL}/espacios${Z}`);
         espacios.value = res.data;
@@ -175,28 +188,28 @@ const cargarEspacios = async () => {
 };
 
 
-const cargarCursos = async () => {
-    cargando.value = true;
+const cargarCursos = async () => {  // GET → carga datos de la API y rellena la tabla
+    cargando.value = true;  // Activa el spinner de carga
     try {
         const res = await axios.get(`${API_URL}/cursos${Z}`);
         cursos.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar los cursos", true);
     } finally {
-        cargando.value = false;
+        cargando.value = false;  // El bloque finally apaga el spinner siempre, incluso si hay error
     }
 };
 
 // POST
-const insertarCurso = async () => {
+const insertarCurso = async () => {  // POST → crea un nuevo registro en la BD
     try {
-        mostrarMensaje("Enviando...", false);
+        mostrarMensaje("Enviando...", false);  // Feedback inmediato antes de esperar respuesta del servidor
         await axios.post(`${API_URL}/cursos${Z}`, curso.value);
         mostrarMensaje("✅ Curso creado correctamente", false);
         curso.value = cursoVacio();
         await cargarCursos();
     } catch (error) {
-        if (error.response?.data?.error?.includes("duplicate key")) {
+        if (error.response?.data?.error?.includes("duplicate key")) {  // Error de clave duplicada en la BD → mensaje específico al usuario
             mostrarMensaje(`❌ El curso "${curso.value.id}" ya existe`, true);
         } else {
             console.error("Error POST:", error.response?.data);
@@ -206,19 +219,19 @@ const insertarCurso = async () => {
 };
 
 // PUT
-const cargarEnFormulario = (c) => {
-    curso.value       = { ...c, zfecha: new Date().toISOString().slice(0, 10), zusuario: "ivan" };
-    modoEdicion.value = true;
-    mensaje.value     = "";
-    window.scrollTo({ top: 0, behavior: "smooth" });
+const cargarEnFormulario = (c) => {  // GET → carga datos de la API y rellena la tabla
+    curso.value       = { ...c, zfecha: new Date().toISOString().slice(0, 10), zusuario: "ivan" };  // Fecha de auditoría YYYY-MM-DD
+    modoEdicion.value = true;  // Activa el modo edición: el título y el botón del formulario cambian
+    mensaje.value     = "";  // Limpia el mensaje anterior para no desorientar al usuario
+    window.scrollTo({ top: 0, behavior: "smooth" });  // Desplaza la vista al formulario para que el usuario vea los cambios
 };
 
-const actualizarCurso = async () => {
+const actualizarCurso = async () => {  // PUT → actualiza el registro editado en la BD
     try {
         mostrarMensaje("Guardando...", false);
         await axios.put(`${API_URL}/cursos/${curso.value.id}${Z}`, curso.value);
         mostrarMensaje("✅ Curso actualizado correctamente", false);
-        cancelarEdicion();
+        cancelarEdicion();  // Resetea el formulario y desactiva modoEdicion sin guardar cambios
         await cargarCursos();
     } catch (error) {
         console.error("Error PUT:", error.response?.data);
@@ -229,16 +242,16 @@ const actualizarCurso = async () => {
 const cancelarEdicion = () => {
     curso.value       = cursoVacio();
     modoEdicion.value = false;
-    mensaje.value     = "";
+    mensaje.value     = "";  // Limpia el mensaje anterior para no desorientar al usuario
 };
 
 // DELETE
-const eliminarCurso = async (id) => {
-    if (!confirm(`¿Seguro que quieres eliminar el curso "${id}"?`)) return;
+const eliminarCurso = async (id) => {  // DELETE → elimina el registro tras confirmación
+    if (!confirm(`¿Seguro que quieres eliminar el curso "${id}"?`)) return;  // Confirmación nativa del navegador antes de borrar un registro
     try {
         await axios.delete(`${API_URL}/cursos/${id}${Z}`);
         mostrarMensaje("✅ Curso eliminado correctamente", false);
-        if (modoEdicion.value && curso.value.id === id) cancelarEdicion();
+        if (modoEdicion.value && curso.value.id === id) cancelarEdicion();  // Si se borra/cancela el que estaba en edición, también cancela el modo
         await cargarCursos();
     } catch (error) {
         console.error("Error DELETE:", error.response?.data);
@@ -246,7 +259,7 @@ const eliminarCurso = async (id) => {
     }
 };
 
-const mostrarMensaje = (texto, esError) => {
+const mostrarMensaje = (texto, esError) => {  // Helper: actualiza mensaje + flag de error en un solo lugar
     mensaje.value      = texto;
     mensajeError.value = esError;
 };

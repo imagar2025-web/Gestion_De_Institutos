@@ -89,11 +89,24 @@
 </template>
 
 <script setup>
+
+// ─────────────────────────────────────────────────────────────
+// CrearHorarios.vue  —  CRUD completo de Horario
+// Franjas horarias vinculadas a un turno. Se usan en las reservas de espacios.
+// Patrón común a todos los CRUDs del proyecto:
+//   - GET al montar → lista en tabla
+//   - POST formulario → insertar
+//   - PUT fila → cargarEnFormulario() activa modoEdicion, luego actualizar
+//   - DELETE fila → confirmar con window.confirm(), luego eliminar
+//   - modoEdicion: controla si el formulario está en modo crear o editar
+//   - PK: id (deshabilitado en edición, no se puede cambiar)
+// ─────────────────────────────────────────────────────────────
+
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { URL } from "@/variablesGlobales";
 
-const API_URL = URL;
+const API_URL = URL;  // URL base de la API
 const Z      = "?zusuario=ivan";
 
 // Estado 
@@ -109,38 +122,38 @@ const horarioVacio = () => ({
     hora_inicio: "",
     hora_fin:    "",
     turno_id:    "",
-    zfecha:      new Date().toISOString().slice(0, 10),
-    zusuario:    "ivan"
+    zfecha:      new Date().toISOString().slice(0, 10),  // Fecha de auditoría YYYY-MM-DD
+    zusuario:    "ivan"  // Usuario que realiza la operación (requerido por la API)
 });
 
 const horario = ref(horarioVacio());
 
 // Carga inicial 
-onMounted(() => cargarHorarios());
+onMounted(() => cargarHorarios());  // Carga inicial de datos al montar el componente
 
 //  GET
-const cargarHorarios = async () => {
-    cargando.value = true;
+const cargarHorarios = async () => {  // GET → carga datos de la API y rellena la tabla
+    cargando.value = true;  // Activa el spinner de carga
     try {
         const res = await axios.get(`${API_URL}/horarios${Z}`);
         horarios.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar los horarios", true);
     } finally {
-        cargando.value = false;
+        cargando.value = false;  // El bloque finally apaga el spinner siempre, incluso si hay error
     }
 };
 
 //  POST 
-const insertarHorario = async () => {
+const insertarHorario = async () => {  // POST → crea un nuevo registro en la BD
     try {
-        mostrarMensaje("Enviando...", false);
+        mostrarMensaje("Enviando...", false);  // Feedback inmediato antes de esperar respuesta del servidor
         await axios.post(`${API_URL}/horarios${Z}`, horario.value);
         mostrarMensaje("✅ Horario creado correctamente", false);
         horario.value = horarioVacio();
         await cargarHorarios();
     } catch (error) {
-        if (error.response?.data?.error?.includes("duplicate key")) {
+        if (error.response?.data?.error?.includes("duplicate key")) {  // Error de clave duplicada en la BD → mensaje específico al usuario
             mostrarMensaje(`❌ El horario "${horario.value.id}" ya existe`, true);
         } else {
             console.error("Error POST:", error.response?.data);
@@ -150,21 +163,21 @@ const insertarHorario = async () => {
 };
 
 //PUT
-const cargarEnFormulario = (h) => {
+const cargarEnFormulario = (h) => {  // GET → carga datos de la API y rellena la tabla
     // Copia los datos de la fila al formulario y activa modo edición
-    horario.value = { ...h, zfecha: new Date().toISOString().slice(0, 10), zusuario: "ivan" };
-    modoEdicion.value = true;
+    horario.value = { ...h, zfecha: new Date().toISOString().slice(0, 10), zusuario: "ivan" };  // Fecha de auditoría YYYY-MM-DD
+    modoEdicion.value = true;  // Activa el modo edición: el título y el botón del formulario cambian
     mensajeHorario.value = "";
     // Hace scroll al formulario
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });  // Desplaza la vista al formulario para que el usuario vea los cambios
 };
 
-const actualizarHorario = async () => {
+const actualizarHorario = async () => {  // PUT → actualiza el registro editado en la BD
     try {
         mostrarMensaje("Guardando...", false);
         await axios.put(`${API_URL}/horarios/${horario.value.id}${Z}`, horario.value);
         mostrarMensaje("✅ Horario actualizado correctamente", false);
-        cancelarEdicion();
+        cancelarEdicion();  // Resetea el formulario y desactiva modoEdicion sin guardar cambios
         await cargarHorarios();
     } catch (error) {
         console.error("Error PUT:", error.response?.data);
@@ -179,13 +192,13 @@ const cancelarEdicion = () => {
 };
 
 // DELETE 
-const eliminarHorario = async (id) => {
-    if (!confirm(`¿Seguro que quieres eliminar el horario "${id}"?`)) return;
+const eliminarHorario = async (id) => {  // DELETE → elimina el registro tras confirmación
+    if (!confirm(`¿Seguro que quieres eliminar el horario "${id}"?`)) return;  // Confirmación nativa del navegador antes de borrar un registro
     try {
         await axios.delete(`${API_URL}/horarios/${id}${Z}`);
         mostrarMensaje("✅ Horario eliminado correctamente", false);
         // Si estaba en edición ese mismo, cancela
-        if (modoEdicion.value && horario.value.id === id) cancelarEdicion();
+        if (modoEdicion.value && horario.value.id === id) cancelarEdicion();  // Si se borra/cancela el que estaba en edición, también cancela el modo
         await cargarHorarios();
     } catch (error) {
         console.error("Error DELETE:", error.response?.data);
@@ -194,7 +207,7 @@ const eliminarHorario = async (id) => {
 };
 
 // Helper mensaje 
-const mostrarMensaje = (texto, esError) => {
+const mostrarMensaje = (texto, esError) => {  // Helper: actualiza mensaje + flag de error en un solo lugar
     mensajeHorario.value = texto;
     mensajeError.value   = esError;
 };

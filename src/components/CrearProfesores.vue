@@ -107,12 +107,25 @@
 </template>
 
 <script setup>
+
+// ─────────────────────────────────────────────────────────────
+// CrearProfesores.vue  —  CRUD completo de Profesor
+// Profesores del centro. PK = DNI/NIE. Incluye rol y departamento.
+// Patrón común a todos los CRUDs del proyecto:
+//   - GET al montar → lista en tabla
+//   - POST formulario → insertar
+//   - PUT fila → cargarEnFormulario() activa modoEdicion, luego actualizar
+//   - DELETE fila → confirmar con window.confirm(), luego eliminar
+//   - modoEdicion: controla si el formulario está en modo crear o editar
+//   - PK: dni_nie (deshabilitado en edición, no se puede cambiar)
+// ─────────────────────────────────────────────────────────────
+
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { URL } from "@/variablesGlobales";
 
-const API_URL = URL;
-const Z = "?zusuario=ivan";
+const API_URL = URL;  // URL base de la API
+const Z = "?zusuario=ivan";  // Parámetro de auditoría requerido por todos los endpoints
 
 const rolesDisponibles = ["ADMIN", "TIC", "PROF", "ALUM"];
 
@@ -131,19 +144,19 @@ const profVacio = () => ({
     departamento_id:       "",
     rol_id:                "",
     password_hash:         "",
-    zfecha:                new Date().toISOString().split("T")[0],
-    zusuario:              "ivan"
+    zfecha:                new Date().toISOString().split("T")[0],  // Fecha de auditoría YYYY-MM-DD
+    zusuario:              "ivan"  // Usuario que realiza la operación (requerido por la API)
 });
 
 const profesor = ref(profVacio());
 
-onMounted(async () => {
+onMounted(async () => {  // Carga inicial de datos al montar el componente
     await cargarDepartamentos();
     await cargarProfesores();
 });
 
 // GET departamentos para el selector
-const cargarDepartamentos = async () => {
+const cargarDepartamentos = async () => {  // GET → carga datos de la API y rellena la tabla
     try {
         const res = await axios.get(`${API_URL}/departamentos${Z}`);
         departamentos.value = res.data;
@@ -153,28 +166,28 @@ const cargarDepartamentos = async () => {
 };
 
 // GET profesores
-const cargarProfesores = async () => {
-    cargando.value = true;
+const cargarProfesores = async () => {  // GET → carga datos de la API y rellena la tabla
+    cargando.value = true;  // Activa el spinner de carga
     try {
         const res = await axios.get(`${API_URL}/profesores${Z}`);
         profesores.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar los profesores", true);
     } finally {
-        cargando.value = false;
+        cargando.value = false;  // El bloque finally apaga el spinner siempre, incluso si hay error
     }
 };
 
 // POST
-const insertarProfesor = async () => {
+const insertarProfesor = async () => {  // POST → crea un nuevo registro en la BD
     try {
-        mostrarMensaje("Enviando...", false);
+        mostrarMensaje("Enviando...", false);  // Feedback inmediato antes de esperar respuesta del servidor
         await axios.post(`${API_URL}/profesores${Z}`, profesor.value);
         mostrarMensaje("✅ Profesor creado correctamente", false);
         profesor.value = profVacio();
         await cargarProfesores();
     } catch (error) {
-        if (error.response?.data?.error?.includes("duplicate key")) {
+        if (error.response?.data?.error?.includes("duplicate key")) {  // Error de clave duplicada en la BD → mensaje específico al usuario
             mostrarMensaje(`❌ El profesor "${profesor.value.dni_nie}" ya existe`, true);
         } else {
             console.error("Error POST:", error.response?.data);
@@ -184,19 +197,19 @@ const insertarProfesor = async () => {
 };
 
 // PUT
-const cargarEnFormulario = (p) => {
-    profesor.value    = { ...p, password_hash: "", zfecha: new Date().toISOString().split("T")[0], zusuario: "ivan" };
-    modoEdicion.value = true;
-    mensaje.value     = "";
-    window.scrollTo({ top: 0, behavior: "smooth" });
+const cargarEnFormulario = (p) => {  // GET → carga datos de la API y rellena la tabla
+    profesor.value    = { ...p, password_hash: "", zfecha: new Date().toISOString().split("T")[0], zusuario: "ivan" };  // Fecha de auditoría YYYY-MM-DD
+    modoEdicion.value = true;  // Activa el modo edición: el título y el botón del formulario cambian
+    mensaje.value     = "";  // Limpia el mensaje anterior para no desorientar al usuario
+    window.scrollTo({ top: 0, behavior: "smooth" });  // Desplaza la vista al formulario para que el usuario vea los cambios
 };
 
-const actualizarProfesor = async () => {
+const actualizarProfesor = async () => {  // PUT → actualiza el registro editado en la BD
     try {
         mostrarMensaje("Guardando...", false);
         await axios.put(`${API_URL}/profesores/${profesor.value.dni_nie}${Z}`, profesor.value);
         mostrarMensaje("✅ Profesor actualizado correctamente", false);
-        cancelarEdicion();
+        cancelarEdicion();  // Resetea el formulario y desactiva modoEdicion sin guardar cambios
         await cargarProfesores();
     } catch (error) {
         console.error("Error PUT:", error.response?.data);
@@ -207,16 +220,16 @@ const actualizarProfesor = async () => {
 const cancelarEdicion = () => {
     profesor.value    = profVacio();
     modoEdicion.value = false;
-    mensaje.value     = "";
+    mensaje.value     = "";  // Limpia el mensaje anterior para no desorientar al usuario
 };
 
 // DELETE
-const eliminarProfesor = async (dni) => {
-    if (!confirm(`¿Seguro que quieres eliminar al profesor "${dni}"?`)) return;
+const eliminarProfesor = async (dni) => {  // DELETE → elimina el registro tras confirmación
+    if (!confirm(`¿Seguro que quieres eliminar al profesor "${dni}"?`)) return;  // Confirmación nativa del navegador antes de borrar un registro
     try {
         await axios.delete(`${API_URL}/profesores/${dni}${Z}`);
         mostrarMensaje("✅ Profesor eliminado correctamente", false);
-        if (modoEdicion.value && profesor.value.dni_nie === dni) cancelarEdicion();
+        if (modoEdicion.value && profesor.value.dni_nie === dni) cancelarEdicion();  // Si se borra/cancela el que estaba en edición, también cancela el modo
         await cargarProfesores();
     } catch (error) {
         console.error("Error DELETE:", error.response?.data);
@@ -224,7 +237,7 @@ const eliminarProfesor = async (dni) => {
     }
 };
 
-const mostrarMensaje = (texto, esError) => {
+const mostrarMensaje = (texto, esError) => {  // Helper: actualiza mensaje + flag de error en un solo lugar
     mensaje.value      = texto;
     mensajeError.value = esError;
 };

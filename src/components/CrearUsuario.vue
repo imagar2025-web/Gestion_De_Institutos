@@ -1,231 +1,248 @@
 <template>
-    <div class="page">
-        <div class="card">
+  <div class="page">
+    <div class="card">
 
-            
-            <h3>{{ modoEdicionEstado ? '✏️ Editar Estado' : '➕ Crear Estado de Usuario' }}</h3>
+      <!-- ══════════════════════════════════════════════════════
+           SECCIÓN 1: CRUD DE ESTADOS DE USUARIO
+           Debe completarse ANTES de crear usuarios, ya que
+           el formulario de usuario requiere seleccionar un estado.
+      ════════════════════════════════════════════════════════ -->
+      <h3>{{ modoEdicionEstado ? '✏️ Editar Estado' : '➕ Crear Estado de Usuario' }}</h3>
 
-            <form @submit.prevent="modoEdicionEstado ? actualizarEstado() : insertarEstado()">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Estado predefinido</label>
-                        <select v-model="estadoSeleccionado" @change="rellenarEstado">
-                            <option value="">-- Autorellenar desde plantilla --</option>
-                            <option v-for="e in estadosDisponibles" :key="e.id" :value="e">
-                                {{ e.id }} - {{ e.nombre }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>ID</label>
-                        <input v-model="estado.id" :disabled="modoEdicionEstado" required>
-                        <small v-if="modoEdicionEstado" class="hint">El ID no se puede modificar</small>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Nombre</label>
-                        <input v-model="estado.nombre" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Permite acceso</label>
-                        <select v-model="estado.permite_acceso" required>
-                            <option value="">-- Selecciona --</option>
-                            <option :value="true">✅ Sí</option>
-                            <option :value="false">❌ No</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Descripción</label>
-                    <input v-model="estado.descripcion" required>
-                </div>
-
-                <div class="form-botones">
-                    <button type="submit" class="btn-primary">
-                        {{ modoEdicionEstado ? '💾 Guardar estado' : '➕ Insertar estado' }}
-                    </button>
-                    <button v-if="modoEdicionEstado" type="button" class="btn-secundario" @click="cancelarEdicionEstado">
-                        ✖ Cancelar
-                    </button>
-                </div>
-            </form>
-
-            <p v-if="mensajeEstado" :class="mensajeErrorEstado ? 'msg-error' : 'msg-ok'">{{ mensajeEstado }}</p>
-
-            <!-- Tabla estados -->
-            <div class="tabla-header">
-                <h4>📋 Estados registrados</h4>
-                <button class="btn-refrescar" @click="cargarEstados">🔄 Refrescar</button>
-            </div>
-
-            <p v-if="cargandoEstados" class="msg-cargando">⏳ Cargando...</p>
-            <div v-else-if="estados.length === 0" class="vacio">No hay estados registrados</div>
-            <div v-else class="tabla-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Permite acceso</th>
-                            <th>Descripción</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="e in estados" :key="e.id"
-                            :class="{ 'fila-editando': modoEdicionEstado && estado.id === e.id }">
-                            <td>{{ e.id }}</td>
-                            <td>{{ e.nombre }}</td>
-                            <td>
-                                <span class="badge" :class="e.permite_acceso ? 'badge-si' : 'badge-no'">
-                                    {{ e.permite_acceso ? '✅ Sí' : '❌ No' }}
-                                </span>
-                            </td>
-                            <td>{{ e.descripcion }}</td>
-                            <td class="acciones">
-                                <button class="btn-editar" @click="cargarEstadoEnFormulario(e)">✏️ Editar</button>
-                                <button class="btn-eliminar" @click="eliminarEstado(e.id)">🗑️ Eliminar</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <hr class="separador">
-
-           
-            <h3>{{ modoEdicionUsuario ? '✏️ Editar Usuario' : '➕ Crear Usuario' }}</h3>
-            <p class="aviso">⚠️ Crea primero el estado antes de insertar el usuario</p>
-
-            <form @submit.prevent="modoEdicionUsuario ? actualizarUsuario() : insertarUsuario()">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Login</label>
-                        <input v-model="usuario.login" :disabled="modoEdicionUsuario" required>
-                        <small v-if="modoEdicionUsuario" class="hint">El login no se puede modificar</small>
-                    </div>
-                    <div class="form-group">
-                        <label>Rol ID</label>
-                        <input v-model="usuario.rol_id" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Estado</label>
-                        <select v-model="usuario.estado_id" required>
-                            <option value="">-- Selecciona un estado --</option>
-                            <option v-for="e in estados" :key="e.id" :value="e.id">
-                                {{ e.id }} - {{ e.nombre }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Ref identidad FK</label>
-                        <input v-model="usuario.ref_identidad_fk" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group" v-if="!modoEdicionUsuario">
-                        <label>Password</label>
-                        <input type="password" v-model="usuario.password_hash" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Último acceso</label>
-                        <input type="date" v-model="usuario.ultimo_acceso" required>
-                    </div>
-                </div>
-
-                <div class="form-botones">
-                    <button type="submit" class="btn-primary">
-                        {{ modoEdicionUsuario ? '💾 Guardar usuario' : '➕ Insertar usuario' }}
-                    </button>
-                    <button v-if="modoEdicionUsuario" type="button" class="btn-secundario" @click="cancelarEdicionUsuario">
-                        ✖ Cancelar
-                    </button>
-                </div>
-            </form>
-
-            <p v-if="mensajeUsuario" :class="mensajeErrorUsuario ? 'msg-error' : 'msg-ok'">{{ mensajeUsuario }}</p>
-
-            <!-- Tabla usuarios -->
-            <div class="tabla-header">
-                <h4>📋 Usuarios registrados</h4>
-                <button class="btn-refrescar" @click="cargarUsuarios">🔄 Refrescar</button>
-            </div>
-
-            <p v-if="cargandoUsuarios" class="msg-cargando">⏳ Cargando...</p>
-            <div v-else-if="usuarios.length === 0" class="vacio">No hay usuarios registrados</div>
-            <div v-else class="tabla-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Login</th>
-                            <th>Rol</th>
-                            <th>Estado</th>
-                            <th>Ref identidad</th>
-                            <th>Último acceso</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="u in usuarios" :key="u.login"
-                            :class="{ 'fila-editando': modoEdicionUsuario && usuario.login === u.login }">
-                            <td>{{ u.login }}</td>
-                            <td>{{ u.rol_id }}</td>
-                            <td>{{ u.estado_id }}</td>
-                            <td>{{ u.ref_identidad_fk }}</td>
-                            <td>{{ u.ultimo_acceso }}</td>
-                            <td class="acciones">
-                                <button class="btn-editar" @click="cargarUsuarioEnFormulario(u)">✏️ Editar</button>
-                                <button class="btn-eliminar" @click="eliminarUsuario(u.login)">🗑️ Eliminar</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
+      <form @submit.prevent="modoEdicionEstado ? actualizarEstado() : insertarEstado()">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Estado predefinido</label>
+            <!-- Selector de plantillas: rellena el formulario con valores predefinidos
+                 para que el admin no tenga que escribirlos a mano -->
+            <select v-model="estadoSeleccionado" @change="rellenarEstado">
+              <option value="">-- Autorellenar desde plantilla --</option>
+              <option v-for="e in estadosDisponibles" :key="e.id" :value="e">
+                {{ e.id }} - {{ e.nombre }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ID</label>
+            <input v-model="estado.id" :disabled="modoEdicionEstado" required>
+            <small v-if="modoEdicionEstado" class="hint">El ID no se puede modificar</small>
+          </div>
         </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre</label>
+            <input v-model="estado.nombre" required>
+          </div>
+          <div class="form-group">
+            <label>Permite acceso</label>
+            <!-- :value="true/false" vincula booleanos reales, no strings -->
+            <select v-model="estado.permite_acceso" required>
+              <option value="">-- Selecciona --</option>
+              <option :value="true">✅ Sí</option>
+              <option :value="false">❌ No</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descripción</label>
+          <input v-model="estado.descripcion" required>
+        </div>
+
+        <div class="form-botones">
+          <button type="submit" class="btn-primary">
+            {{ modoEdicionEstado ? '💾 Guardar estado' : '➕ Insertar estado' }}
+          </button>
+          <button v-if="modoEdicionEstado" type="button" class="btn-secundario" @click="cancelarEdicionEstado">
+            ✖ Cancelar
+          </button>
+        </div>
+      </form>
+
+      <p v-if="mensajeEstado" :class="mensajeErrorEstado ? 'msg-error' : 'msg-ok'">{{ mensajeEstado }}</p>
+
+      <!-- Tabla de estados de usuario -->
+      <div class="tabla-header">
+        <h4>📋 Estados registrados</h4>
+        <button class="btn-refrescar" @click="cargarEstados">🔄 Refrescar</button>
+      </div>
+      <p v-if="cargandoEstados" class="msg-cargando">⏳ Cargando...</p>
+      <div v-else-if="estados.length === 0" class="vacio">No hay estados registrados</div>
+      <div v-else class="tabla-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>Nombre</th><th>Permite acceso</th><th>Descripción</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="e in estados" :key="e.id"
+              :class="{ 'fila-editando': modoEdicionEstado && estado.id === e.id }">
+              <td>{{ e.id }}</td>
+              <td>{{ e.nombre }}</td>
+              <td>
+                <!-- Badge verde si permite acceso, rojo si no -->
+                <span class="badge" :class="e.permite_acceso ? 'badge-si' : 'badge-no'">
+                  {{ e.permite_acceso ? '✅ Sí' : '❌ No' }}
+                </span>
+              </td>
+              <td>{{ e.descripcion }}</td>
+              <td class="acciones">
+                <button class="btn-editar" @click="cargarEstadoEnFormulario(e)">✏️ Editar</button>
+                <button class="btn-eliminar" @click="eliminarEstado(e.id)">🗑️ Eliminar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Separador visual entre las dos secciones del componente -->
+      <hr class="separador">
+
+      <!-- ══════════════════════════════════════════════════════
+           SECCIÓN 2: CRUD DE USUARIOS
+           La advertencia recuerda al admin crear el estado antes.
+      ════════════════════════════════════════════════════════ -->
+      <h3>{{ modoEdicionUsuario ? '✏️ Editar Usuario' : '➕ Crear Usuario' }}</h3>
+      <p class="aviso">⚠️ Crea primero el estado antes de insertar el usuario</p>
+
+      <form @submit.prevent="modoEdicionUsuario ? actualizarUsuario() : insertarUsuario()">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Login</label>
+            <input v-model="usuario.login" :disabled="modoEdicionUsuario" required>
+            <small v-if="modoEdicionUsuario" class="hint">El login no se puede modificar</small>
+          </div>
+          <div class="form-group">
+            <label>Rol ID</label>
+            <input v-model="usuario.rol_id" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Estado</label>
+            <!-- El selector se rellena con los estados ya creados en la sección superior -->
+            <select v-model="usuario.estado_id" required>
+              <option value="">-- Selecciona un estado --</option>
+              <option v-for="e in estados" :key="e.id" :value="e.id">
+                {{ e.id }} - {{ e.nombre }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Ref identidad FK</label>
+            <!-- DNI/NIE del profesor o NIA del alumno al que pertenece el usuario -->
+            <input v-model="usuario.ref_identidad_fk" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <!-- El campo password solo aparece en modo creación; en edición no se muestra -->
+          <div class="form-group" v-if="!modoEdicionUsuario">
+            <label>Password</label>
+            <input type="password" v-model="usuario.password_hash" required>
+          </div>
+          <div class="form-group">
+            <label>Último acceso</label>
+            <input type="date" v-model="usuario.ultimo_acceso" required>
+          </div>
+        </div>
+
+        <div class="form-botones">
+          <button type="submit" class="btn-primary">
+            {{ modoEdicionUsuario ? '💾 Guardar usuario' : '➕ Insertar usuario' }}
+          </button>
+          <button v-if="modoEdicionUsuario" type="button" class="btn-secundario" @click="cancelarEdicionUsuario">
+            ✖ Cancelar
+          </button>
+        </div>
+      </form>
+
+      <p v-if="mensajeUsuario" :class="mensajeErrorUsuario ? 'msg-error' : 'msg-ok'">{{ mensajeUsuario }}</p>
+
+      <!-- Tabla de usuarios -->
+      <div class="tabla-header">
+        <h4>📋 Usuarios registrados</h4>
+        <button class="btn-refrescar" @click="cargarUsuarios">🔄 Refrescar</button>
+      </div>
+      <p v-if="cargandoUsuarios" class="msg-cargando">⏳ Cargando...</p>
+      <div v-else-if="usuarios.length === 0" class="vacio">No hay usuarios registrados</div>
+      <div v-else class="tabla-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Login</th><th>Rol</th><th>Estado</th><th>Ref identidad</th>
+              <th>Último acceso</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="u in usuarios" :key="u.login"
+              :class="{ 'fila-editando': modoEdicionUsuario && usuario.login === u.login }">
+              <td>{{ u.login }}</td>
+              <td>{{ u.rol_id }}</td>
+              <td>{{ u.estado_id }}</td>
+              <td>{{ u.ref_identidad_fk }}</td>
+              <td>{{ u.ultimo_acceso }}</td>
+              <td class="acciones">
+                <button class="btn-editar" @click="cargarUsuarioEnFormulario(u)">✏️ Editar</button>
+                <button class="btn-eliminar" @click="eliminarUsuario(u.login)">🗑️ Eliminar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
     </div>
+  </div>
 </template>
 
 <script setup>
+// ─────────────────────────────────────────────────────────────
+// CrearUsuario.vue  —  Componente doble: Estados de usuario + Usuarios
+// Este componente agrupa dos CRUDs relacionados en una sola página:
+//   1. Estados de usuario (ACT, BAJ, BLOQ…): tabla maestra
+//   2. Usuarios del sistema: dependen de un estado existente
+// Cada sección tiene su propio estado reactivo, mensajes y modos de edición
+// para que funcionen de forma independiente en la misma pantalla.
+// ─────────────────────────────────────────────────────────────
+
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { URL } from "@/variablesGlobales";
 
 const API_URL = URL;
-const Z = "?zusuario=ivan";
+const Z       = "?zusuario=ivan";  // Auditoría
 
-// Estados predefinidos (plantillas) 
+// ── Plantillas de estados predefinidos ───────────────────────
+// No existe tabla en BD para estas plantillas; están hardcodeadas
+// en el frontend como ayuda al admin para no escribirlos a mano.
+// Son los valores más habituales en un centro educativo.
 const estadosDisponibles = [
-    { id: "ACT",  nombre: "Activo",        permite_acceso: true,  descripcion: "Usuario con acceso total a la plataforma." },
-    { id: "BAJ",  nombre: "Baja",          permite_acceso: false, descripcion: "El usuario ya no pertenece al centro." },
-    { id: "BLOQ", nombre: "Bloqueado",     permite_acceso: false, descripcion: "Acceso restringido por seguridad o administrador." },
-    { id: "GRAD", nombre: "Graduado",      permite_acceso: false, descripcion: "Alumno que terminó su ciclo formativo." },
-    { id: "TEMP", nombre: "Baja Temporal", permite_acceso: false, descripcion: "Usuario fuera del sistema temporalmente." },
+  { id: "ACT",  nombre: "Activo",        permite_acceso: true,  descripcion: "Usuario con acceso total a la plataforma." },
+  { id: "BAJ",  nombre: "Baja",          permite_acceso: false, descripcion: "El usuario ya no pertenece al centro." },
+  { id: "BLOQ", nombre: "Bloqueado",     permite_acceso: false, descripcion: "Acceso restringido por seguridad o administrador." },
+  { id: "GRAD", nombre: "Graduado",      permite_acceso: false, descripcion: "Alumno que terminó su ciclo formativo." },
+  { id: "TEMP", nombre: "Baja Temporal", permite_acceso: false, descripcion: "Usuario fuera del sistema temporalmente." },
 ];
 
-// Estado reactivo  Estados
+// ── Estado reactivo — sección Estados ────────────────────────
 const estados            = ref([]);
-const estadoSeleccionado = ref("");
+const estadoSeleccionado = ref("");  // Objeto de la plantilla elegida
 const mensajeEstado      = ref("");
 const mensajeErrorEstado = ref(false);
 const cargandoEstados    = ref(false);
 const modoEdicionEstado  = ref(false);
 
 const estadoVacio = () => ({
-    id:             "",
-    nombre:         "",
-    permite_acceso: "",
-    descripcion:    "",
-    zfecha:         new Date().toISOString().split("T")[0],
-    zusuario:       "ivan"
+  id:             "",
+  nombre:         "",
+  permite_acceso: "",  // Booleano: true | false
+  descripcion:    "",
+  zfecha:         new Date().toISOString().split("T")[0],
+  zusuario:       "ivan"
 });
 
 const estado = ref(estadoVacio());
 
-// Estado reactivo — Usuarios 
+// ── Estado reactivo — sección Usuarios ───────────────────────
 const usuarios             = ref([]);
 const mensajeUsuario       = ref("");
 const mensajeErrorUsuario  = ref(false);
@@ -233,170 +250,187 @@ const cargandoUsuarios     = ref(false);
 const modoEdicionUsuario   = ref(false);
 
 const usuarioVacio = () => ({
-    login:            "",
-    password_hash:    "",
-    rol_id:           "",
-    ref_identidad_fk: "",
-    estado_id:        "",
-    ultimo_acceso:    "",
-    zfecha:           new Date().toISOString().split("T")[0],
-    zusuario:         "ivan"
+  login:            "",
+  password_hash:    "",  // Solo para creación; en edición este campo no se envía
+  rol_id:           "",
+  ref_identidad_fk: "",  // DNI/NIE (profesor) o NIA (alumno) al que pertenece la cuenta
+  estado_id:        "",
+  ultimo_acceso:    "",
+  zfecha:           new Date().toISOString().split("T")[0],
+  zusuario:         "ivan"
 });
 
 const usuario = ref(usuarioVacio());
 
-// Carga inicial
+// Carga estados y usuarios al montar (secuencial para que los estados
+// estén disponibles en el selector de usuarios)
 onMounted(async () => {
-    await cargarEstados();
-    await cargarUsuarios();
+  await cargarEstados();
+  await cargarUsuarios();
 });
 
+// ── CRUD Estados de usuario ───────────────────────────────────
 
+// GET /estados_usuario → rellena la tabla y el selector del formulario de usuarios
 const cargarEstados = async () => {
-    cargandoEstados.value = true;
-    try {
-        const res = await axios.get(`${API_URL}/estados_usuario${Z}`);
-        estados.value = res.data;
-    } catch (error) {
-        mostrarMensajeEstado("❌ No se pudieron cargar los estados", true);
-    } finally {
-        cargandoEstados.value = false;
-    }
+  cargandoEstados.value = true;
+  try {
+    const res = await axios.get(`${API_URL}/estados_usuario${Z}`);
+    estados.value = res.data;
+  } catch (error) {
+    mostrarMensajeEstado("❌ No se pudieron cargar los estados", true);
+  } finally {
+    cargandoEstados.value = false;
+  }
 };
 
+// Rellena el formulario de estado con los valores de la plantilla elegida
 const rellenarEstado = () => {
-    if (estadoSeleccionado.value) {
-        estado.value.id             = estadoSeleccionado.value.id;
-        estado.value.nombre         = estadoSeleccionado.value.nombre;
-        estado.value.permite_acceso = estadoSeleccionado.value.permite_acceso;
-        estado.value.descripcion    = estadoSeleccionado.value.descripcion;
-    }
+  if (estadoSeleccionado.value) {
+    estado.value.id             = estadoSeleccionado.value.id;
+    estado.value.nombre         = estadoSeleccionado.value.nombre;
+    estado.value.permite_acceso = estadoSeleccionado.value.permite_acceso;
+    estado.value.descripcion    = estadoSeleccionado.value.descripcion;
+  }
 };
 
+// POST /estados_usuario → crea el estado
 const insertarEstado = async () => {
-    try {
-        mostrarMensajeEstado("Enviando...", false);
-        await axios.post(`${API_URL}/estados_usuario${Z}`, estado.value);
-        mostrarMensajeEstado("✅ Estado creado correctamente", false);
-        estado.value            = estadoVacio();
-        estadoSeleccionado.value = "";
-        await cargarEstados();
-    } catch (error) {
-        console.error("Error POST estado:", error.response?.data);
-        mostrarMensajeEstado("❌ El servidor rechazó los datos del estado", true);
-    }
+  try {
+    mostrarMensajeEstado("Enviando...", false);
+    await axios.post(`${API_URL}/estados_usuario${Z}`, estado.value);
+    mostrarMensajeEstado("✅ Estado creado correctamente", false);
+    estado.value             = estadoVacio();
+    estadoSeleccionado.value = "";  // Limpia el selector de plantillas
+    await cargarEstados();
+  } catch (error) {
+    console.error("Error POST estado:", error.response?.data);
+    mostrarMensajeEstado("❌ El servidor rechazó los datos del estado", true);
+  }
 };
 
+// Carga el estado en el formulario para editarlo
 const cargarEstadoEnFormulario = (e) => {
-    estado.value            = { ...e, zfecha: new Date().toISOString().split("T")[0], zusuario: "ivan" };
-    estadoSeleccionado.value = "";
-    modoEdicionEstado.value  = true;
-    mensajeEstado.value      = "";
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  estado.value             = { ...e, zfecha: new Date().toISOString().split("T")[0], zusuario: "ivan" };
+  estadoSeleccionado.value = "";  // Limpia la plantilla para no confundir
+  modoEdicionEstado.value  = true;
+  mensajeEstado.value      = "";
+  window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
+// PUT /estados_usuario/:id → actualiza
 const actualizarEstado = async () => {
-    try {
-        mostrarMensajeEstado("Guardando...", false);
-        await axios.put(`${API_URL}/estados_usuario/${estado.value.id}${Z}`, estado.value);
-        mostrarMensajeEstado("✅ Estado actualizado correctamente", false);
-        cancelarEdicionEstado();
-        await cargarEstados();
-    } catch (error) {
-        console.error("Error PUT estado:", error.response?.data);
-        mostrarMensajeEstado("❌ No se pudo actualizar el estado", true);
-    }
+  try {
+    mostrarMensajeEstado("Guardando...", false);
+    await axios.put(`${API_URL}/estados_usuario/${estado.value.id}${Z}`, estado.value);
+    mostrarMensajeEstado("✅ Estado actualizado correctamente", false);
+    cancelarEdicionEstado();
+    await cargarEstados();
+  } catch (error) {
+    console.error("Error PUT estado:", error.response?.data);
+    mostrarMensajeEstado("❌ No se pudo actualizar el estado", true);
+  }
 };
 
 const cancelarEdicionEstado = () => {
-    estado.value             = estadoVacio();
-    estadoSeleccionado.value = "";
-    modoEdicionEstado.value  = false;
-    mensajeEstado.value      = "";
+  estado.value             = estadoVacio();
+  estadoSeleccionado.value = "";
+  modoEdicionEstado.value  = false;
+  mensajeEstado.value      = "";
 };
 
+// DELETE /estados_usuario/:id → borra tras confirmación
 const eliminarEstado = async (id) => {
-    if (!confirm(`¿Seguro que quieres eliminar el estado "${id}"?`)) return;
-    try {
-        await axios.delete(`${API_URL}/estados_usuario/${id}${Z}`);
-        mostrarMensajeEstado("✅ Estado eliminado correctamente", false);
-        if (modoEdicionEstado.value && estado.value.id === id) cancelarEdicionEstado();
-        await cargarEstados();
-    } catch (error) {
-        console.error("Error DELETE estado:", error.response?.data);
-        mostrarMensajeEstado("❌ No se pudo eliminar el estado", true);
-    }
+  if (!confirm(`¿Seguro que quieres eliminar el estado "${id}"?`)) return;
+  try {
+    await axios.delete(`${API_URL}/estados_usuario/${id}${Z}`);
+    mostrarMensajeEstado("✅ Estado eliminado correctamente", false);
+    if (modoEdicionEstado.value && estado.value.id === id) cancelarEdicionEstado();
+    await cargarEstados();
+  } catch (error) {
+    console.error("Error DELETE estado:", error.response?.data);
+    mostrarMensajeEstado("❌ No se pudo eliminar el estado", true);
+  }
 };
 
+// ── CRUD Usuarios ─────────────────────────────────────────────
 
+// GET /usuarios → rellena la tabla de usuarios
 const cargarUsuarios = async () => {
-    cargandoUsuarios.value = true;
-    try {
-        const res = await axios.get(`${API_URL}/usuarios${Z}`);
-        usuarios.value = res.data;
-    } catch (error) {
-        mostrarMensajeUsuario("❌ No se pudieron cargar los usuarios", true);
-    } finally {
-        cargandoUsuarios.value = false;
-    }
+  cargandoUsuarios.value = true;
+  try {
+    const res = await axios.get(`${API_URL}/usuarios${Z}`);
+    usuarios.value = res.data;
+  } catch (error) {
+    mostrarMensajeUsuario("❌ No se pudieron cargar los usuarios", true);
+  } finally {
+    cargandoUsuarios.value = false;
+  }
 };
 
+// POST /usuarios → crea el usuario
 const insertarUsuario = async () => {
-    try {
-        mostrarMensajeUsuario("Enviando...", false);
-        await axios.post(`${API_URL}/usuarios${Z}`, usuario.value);
-        mostrarMensajeUsuario("✅ Usuario creado correctamente", false);
-        usuario.value = usuarioVacio();
-        await cargarUsuarios();
-    } catch (error) {
-        console.error("Error POST usuario:", error.response?.data);
-        mostrarMensajeUsuario("❌ El servidor rechazó los datos del usuario", true);
-    }
+  try {
+    mostrarMensajeUsuario("Enviando...", false);
+    await axios.post(`${API_URL}/usuarios${Z}`, usuario.value);
+    mostrarMensajeUsuario("✅ Usuario creado correctamente", false);
+    usuario.value = usuarioVacio();
+    await cargarUsuarios();
+  } catch (error) {
+    console.error("Error POST usuario:", error.response?.data);
+    mostrarMensajeUsuario("❌ El servidor rechazó los datos del usuario", true);
+  }
 };
 
+// Carga el usuario en el formulario para editarlo.
+// password_hash se vacía: nunca se rellena con el hash existente por seguridad.
 const cargarUsuarioEnFormulario = (u) => {
-    usuario.value           = { ...u, password_hash: "", zfecha: new Date().toISOString().split("T")[0], zusuario: "ivan" };
-    modoEdicionUsuario.value = true;
-    mensajeUsuario.value     = "";
-    // Scroll a la sección de usuarios
-    document.querySelector(".separador")?.scrollIntoView({ behavior: "smooth" });
+  usuario.value           = { ...u, password_hash: "", zfecha: new Date().toISOString().split("T")[0], zusuario: "ivan" };
+  modoEdicionUsuario.value = true;
+  mensajeUsuario.value     = "";
+  // Scroll al separador (sección usuarios) en lugar de al inicio
+  document.querySelector(".separador")?.scrollIntoView({ behavior: "smooth" });
 };
 
+// PUT /usuarios/:login → actualiza
 const actualizarUsuario = async () => {
-    try {
-        mostrarMensajeUsuario("Guardando...", false);
-        await axios.put(`${API_URL}/usuarios/${usuario.value.login}${Z}`, usuario.value);
-        mostrarMensajeUsuario("✅ Usuario actualizado correctamente", false);
-        cancelarEdicionUsuario();
-        await cargarUsuarios();
-    } catch (error) {
-        console.error("Error PUT usuario:", error.response?.data);
-        mostrarMensajeUsuario("❌ No se pudo actualizar el usuario", true);
-    }
+  try {
+    mostrarMensajeUsuario("Guardando...", false);
+    await axios.put(`${API_URL}/usuarios/${usuario.value.login}${Z}`, usuario.value);
+    mostrarMensajeUsuario("✅ Usuario actualizado correctamente", false);
+    cancelarEdicionUsuario();
+    await cargarUsuarios();
+  } catch (error) {
+    console.error("Error PUT usuario:", error.response?.data);
+    mostrarMensajeUsuario("❌ No se pudo actualizar el usuario", true);
+  }
 };
 
 const cancelarEdicionUsuario = () => {
-    usuario.value            = usuarioVacio();
-    modoEdicionUsuario.value = false;
-    mensajeUsuario.value     = "";
+  usuario.value            = usuarioVacio();
+  modoEdicionUsuario.value = false;
+  mensajeUsuario.value     = "";
 };
 
+// DELETE /usuarios/:login → borra tras confirmación
 const eliminarUsuario = async (login) => {
-    if (!confirm(`¿Seguro que quieres eliminar el usuario "${login}"?`)) return;
-    try {
-        await axios.delete(`${API_URL}/usuarios/${login}${Z}`);
-        mostrarMensajeUsuario("✅ Usuario eliminado correctamente", false);
-        if (modoEdicionUsuario.value && usuario.value.login === login) cancelarEdicionUsuario();
-        await cargarUsuarios();
-    } catch (error) {
-        console.error("Error DELETE usuario:", error.response?.data);
-        mostrarMensajeUsuario("❌ No se pudo eliminar el usuario", true);
-    }
+  if (!confirm(`¿Seguro que quieres eliminar el usuario "${login}"?`)) return;
+  try {
+    await axios.delete(`${API_URL}/usuarios/${login}${Z}`);
+    mostrarMensajeUsuario("✅ Usuario eliminado correctamente", false);
+    if (modoEdicionUsuario.value && usuario.value.login === login) cancelarEdicionUsuario();
+    await cargarUsuarios();
+  } catch (error) {
+    console.error("Error DELETE usuario:", error.response?.data);
+    mostrarMensajeUsuario("❌ No se pudo eliminar el usuario", true);
+  }
 };
 
-//  Helpers 
-const mostrarMensajeEstado   = (t, e) => { mensajeEstado.value = t; mensajeErrorEstado.value = e; };
-const mostrarMensajeUsuario  = (t, e) => { mensajeUsuario.value = t; mensajeErrorUsuario.value = e; };
+// ── Helpers de mensaje — uno por sección ─────────────────────
+// Se mantienen separados para que los mensajes de estado y de usuario
+// no interfieran entre sí.
+const mostrarMensajeEstado  = (t, e) => { mensajeEstado.value = t; mensajeErrorEstado.value = e; };
+const mostrarMensajeUsuario = (t, e) => { mensajeUsuario.value = t; mensajeErrorUsuario.value = e; };
 </script>
 
 <style scoped>

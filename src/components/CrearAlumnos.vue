@@ -106,20 +106,33 @@
 </template>
 
 <script setup>
+
+// ─────────────────────────────────────────────────────────────
+// CrearAlumnos.vue  —  CRUD completo de Alumno
+// Gestión de alumnos del centro. PK = NIA (Número de Identificación del Alumno).
+// Patrón común a todos los CRUDs del proyecto:
+//   - GET al montar → lista en tabla
+//   - POST formulario → insertar
+//   - PUT fila → cargarEnFormulario() activa modoEdicion, luego actualizar
+//   - DELETE fila → confirmar con window.confirm(), luego eliminar
+//   - modoEdicion: controla si el formulario está en modo crear o editar
+//   - PK: nia (deshabilitado en edición, no se puede cambiar)
+// ─────────────────────────────────────────────────────────────
+
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { URL } from "@/variablesGlobales";
 
-const API_URL = URL;
+const API_URL = URL;  // URL base de la API
 const Z       = "?zusuario=ivan";
 
 const alumnos      = ref([]);
 const estados      = ref([]);
 const cursos       = ref([]);
 const mensaje      = ref("");
-const mensajeError = ref(false);
-const cargando     = ref(false);
-const modoEdicion  = ref(false);
+const mensajeError = ref(false);  // Distingue mensaje de éxito (false=verde) de error (true=rojo)
+const cargando     = ref(false);  // true mientras se ejecuta una petición GET
+const modoEdicion  = ref(false);  // Controla si el formulario muestra el modo crear o editar
 
 const alumnoVacio = () => ({
     nia:                  "",
@@ -129,17 +142,17 @@ const alumnoVacio = () => ({
     curso_id:             "",
     tutor_legal_contacto: "",
     estado_id:            "",
-    zfecha:               new Date().toISOString().slice(0, 10),
-    zusuario:             "ivan"
+    zfecha:               new Date().toISOString().slice(0, 10),  // Fecha de auditoría YYYY-MM-DD
+    zusuario:             "ivan"  // Usuario que realiza la operación (requerido por la API)
 });
 
 const alumno = ref(alumnoVacio());
 
-onMounted(async () => {
-    await Promise.all([cargarEstados(), cargarCursos(), cargarAlumnos()]);
+onMounted(async () => {  // Carga inicial de datos al montar el componente
+    await Promise.all([cargarEstados(), cargarCursos(), cargarAlumnos()]);  // Lanza varias peticiones en paralelo para reducir el tiempo de espera
 });
 
-const cargarEstados = async () => {
+const cargarEstados = async () => {  // GET → carga datos de la API y rellena la tabla
     try {
         const res = await axios.get(`${API_URL}/estados_usuario${Z}`);
         estados.value = res.data;
@@ -148,7 +161,7 @@ const cargarEstados = async () => {
     }
 };
 
-const cargarCursos = async () => {
+const cargarCursos = async () => {  // GET → carga datos de la API y rellena la tabla
     try {
         const res = await axios.get(`${API_URL}/cursos${Z}`);
         cursos.value = res.data;
@@ -157,27 +170,27 @@ const cargarCursos = async () => {
     }
 };
 
-const cargarAlumnos = async () => {
-    cargando.value = true;
+const cargarAlumnos = async () => {  // GET → carga datos de la API y rellena la tabla
+    cargando.value = true;  // Activa el spinner de carga
     try {
         const res = await axios.get(`${API_URL}/alumnos${Z}`);
         alumnos.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar los alumnos", true);
     } finally {
-        cargando.value = false;
+        cargando.value = false;  // El bloque finally apaga el spinner siempre, incluso si hay error
     }
 };
 
-const insertarAlumno = async () => {
+const insertarAlumno = async () => {  // POST → crea un nuevo registro en la BD
     try {
-        mostrarMensaje("Enviando...", false);
+        mostrarMensaje("Enviando...", false);  // Feedback inmediato antes de esperar respuesta del servidor
         await axios.post(`${API_URL}/alumnos${Z}`, alumno.value);
         mostrarMensaje("✅ Alumno creado correctamente", false);
         alumno.value = alumnoVacio();
         await cargarAlumnos();
     } catch (error) {
-        if (error.response?.data?.error?.includes("duplicate key")) {
+        if (error.response?.data?.error?.includes("duplicate key")) {  // Error de clave duplicada en la BD → mensaje específico al usuario
             mostrarMensaje(`❌ El alumno con NIA "${alumno.value.nia}" ya existe`, true);
         } else {
             console.error("Error POST:", error.response?.data);
@@ -186,19 +199,19 @@ const insertarAlumno = async () => {
     }
 };
 
-const cargarEnFormulario = (a) => {
-    alumno.value      = { ...a, zfecha: new Date().toISOString().slice(0, 10), zusuario: "ivan" };
-    modoEdicion.value = true;
-    mensaje.value     = "";
-    window.scrollTo({ top: 0, behavior: "smooth" });
+const cargarEnFormulario = (a) => {  // GET → carga datos de la API y rellena la tabla
+    alumno.value      = { ...a, zfecha: new Date().toISOString().slice(0, 10), zusuario: "ivan" };  // Fecha de auditoría YYYY-MM-DD
+    modoEdicion.value = true;  // Activa el modo edición: el título y el botón del formulario cambian
+    mensaje.value     = "";  // Limpia el mensaje anterior para no desorientar al usuario
+    window.scrollTo({ top: 0, behavior: "smooth" });  // Desplaza la vista al formulario para que el usuario vea los cambios
 };
 
-const actualizarAlumno = async () => {
+const actualizarAlumno = async () => {  // PUT → actualiza el registro editado en la BD
     try {
         mostrarMensaje("Guardando...", false);
         await axios.put(`${API_URL}/alumnos/${alumno.value.nia}${Z}`, alumno.value);
         mostrarMensaje("✅ Alumno actualizado correctamente", false);
-        cancelarEdicion();
+        cancelarEdicion();  // Resetea el formulario y desactiva modoEdicion sin guardar cambios
         await cargarAlumnos();
     } catch (error) {
         console.error("Error PUT:", error.response?.data);
@@ -209,15 +222,15 @@ const actualizarAlumno = async () => {
 const cancelarEdicion = () => {
     alumno.value      = alumnoVacio();
     modoEdicion.value = false;
-    mensaje.value     = "";
+    mensaje.value     = "";  // Limpia el mensaje anterior para no desorientar al usuario
 };
 
-const eliminarAlumno = async (nia) => {
-    if (!confirm(`¿Seguro que quieres eliminar al alumno con NIA "${nia}"?`)) return;
+const eliminarAlumno = async (nia) => {  // DELETE → elimina el registro tras confirmación
+    if (!confirm(`¿Seguro que quieres eliminar al alumno con NIA "${nia}"?`)) return;  // Confirmación nativa del navegador antes de borrar un registro
     try {
         await axios.delete(`${API_URL}/alumnos/${nia}${Z}`);
         mostrarMensaje("✅ Alumno eliminado correctamente", false);
-        if (modoEdicion.value && alumno.value.nia == nia) cancelarEdicion();
+        if (modoEdicion.value && alumno.value.nia == nia) cancelarEdicion();  // Si se borra/cancela el que estaba en edición, también cancela el modo
         await cargarAlumnos();
     } catch (error) {
         console.error("Error DELETE:", error.response?.data);
@@ -225,7 +238,7 @@ const eliminarAlumno = async (nia) => {
     }
 };
 
-const mostrarMensaje = (texto, esError) => {
+const mostrarMensaje = (texto, esError) => {  // Helper: actualiza mensaje + flag de error en un solo lugar
     mensaje.value      = texto;
     mensajeError.value = esError;
 };

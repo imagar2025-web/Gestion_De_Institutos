@@ -76,53 +76,66 @@
 </template>
 
 <script setup>
+
+// ─────────────────────────────────────────────────────────────
+// CrearRoles.vue  —  CRUD completo de Rol
+// Roles del sistema (ADMIN, TIC, PROF, ALUM) con su nivel de privilegio.
+// Patrón común a todos los CRUDs del proyecto:
+//   - GET al montar → lista en tabla
+//   - POST formulario → insertar
+//   - PUT fila → cargarEnFormulario() activa modoEdicion, luego actualizar
+//   - DELETE fila → confirmar con window.confirm(), luego eliminar
+//   - modoEdicion: controla si el formulario está en modo crear o editar
+//   - PK: id (deshabilitado en edición, no se puede cambiar)
+// ─────────────────────────────────────────────────────────────
+
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { URL } from "@/variablesGlobales";
 
-const API_URL = URL;
+const API_URL = URL;  // URL base de la API
 const Z       = "?zusuario=ivan";
 
 const roles        = ref([]);
 const mensaje      = ref("");
-const mensajeError = ref(false);
-const cargando     = ref(false);
-const modoEdicion  = ref(false);
+const mensajeError = ref(false);  // Distingue mensaje de éxito (false=verde) de error (true=rojo)
+const cargando     = ref(false);  // true mientras se ejecuta una petición GET
+const modoEdicion  = ref(false);  // Controla si el formulario muestra el modo crear o editar
 
 const rolVacio = () => ({
     id:               "",
     nombre:           "",
     nivel_privilegio: "",
     descripcion:      "",
-    zfecha:           new Date().toISOString().slice(0, 10),
-    zusuario:         "ivan"
+    zfecha:           new Date().toISOString().slice(0, 10),  // Fecha de auditoría YYYY-MM-DD
+    zusuario:         "ivan"  // Usuario que realiza la operación (requerido por la API)
 });
 
 const rol = ref(rolVacio());
 
-onMounted(() => cargarRoles());
+onMounted(() => cargarRoles());  // Carga inicial de datos al montar el componente
 
-const cargarRoles = async () => {
-    cargando.value = true;
+const cargarRoles = async () => {  // GET → carga datos de la API y rellena la tabla
+    cargando.value = true;  // Activa el spinner de carga
     try {
         const res = await axios.get(`${API_URL}/roles${Z}`);
         roles.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar los roles", true);
     } finally {
-        cargando.value = false;
+        cargando.value = false;  // El bloque finally apaga el spinner siempre, incluso si hay error
     }
 };
 
-const insertarRol = async () => {
+const insertarRol = async () => {  // POST → crea un nuevo registro en la BD
     try {
-        mostrarMensaje("Enviando...", false);
+        mostrarMensaje("Enviando...", false);  // Feedback inmediato antes de esperar respuesta del servidor
         await axios.post(`${API_URL}/roles${Z}`, rol.value);
         mostrarMensaje("✅ Rol creado correctamente", false);
         rol.value = rolVacio();
         await cargarRoles();
     } catch (error) {
-        if (error.response?.data?.error?.includes("duplicate key")) {
+        if (error.response?.data?.error?.includes("duplicate key")) {  // Error de clave duplicada en la BD → mensaje específico al usuario
             mostrarMensaje(`❌ El rol "${rol.value.id}" ya existe`, true);
         } else {
             console.error("Error POST:", error.response?.data);
@@ -131,19 +144,19 @@ const insertarRol = async () => {
     }
 };
 
-const cargarEnFormulario = (r) => {
-    rol.value         = { ...r, zfecha: new Date().toISOString().slice(0, 10), zusuario: "ivan" };
-    modoEdicion.value = true;
-    mensaje.value     = "";
-    window.scrollTo({ top: 0, behavior: "smooth" });
+const cargarEnFormulario = (r) => {  // GET → carga datos de la API y rellena la tabla
+    rol.value         = { ...r, zfecha: new Date().toISOString().slice(0, 10), zusuario: "ivan" };  // Fecha de auditoría YYYY-MM-DD
+    modoEdicion.value = true;  // Activa el modo edición: el título y el botón del formulario cambian
+    mensaje.value     = "";  // Limpia el mensaje anterior para no desorientar al usuario
+    window.scrollTo({ top: 0, behavior: "smooth" });  // Desplaza la vista al formulario para que el usuario vea los cambios
 };
 
-const actualizarRol = async () => {
+const actualizarRol = async () => {  // PUT → actualiza el registro editado en la BD
     try {
         mostrarMensaje("Guardando...", false);
         await axios.put(`${API_URL}/roles/${rol.value.id}${Z}`, rol.value);
         mostrarMensaje("✅ Rol actualizado correctamente", false);
-        cancelarEdicion();
+        cancelarEdicion();  // Resetea el formulario y desactiva modoEdicion sin guardar cambios
         await cargarRoles();
     } catch (error) {
         console.error("Error PUT:", error.response?.data);
@@ -154,15 +167,15 @@ const actualizarRol = async () => {
 const cancelarEdicion = () => {
     rol.value         = rolVacio();
     modoEdicion.value = false;
-    mensaje.value     = "";
+    mensaje.value     = "";  // Limpia el mensaje anterior para no desorientar al usuario
 };
 
-const eliminarRol = async (id) => {
-    if (!confirm(`¿Seguro que quieres eliminar el rol "${id}"?`)) return;
+const eliminarRol = async (id) => {  // DELETE → elimina el registro tras confirmación
+    if (!confirm(`¿Seguro que quieres eliminar el rol "${id}"?`)) return;  // Confirmación nativa del navegador antes de borrar un registro
     try {
         await axios.delete(`${API_URL}/roles/${id}${Z}`);
         mostrarMensaje("✅ Rol eliminado correctamente", false);
-        if (modoEdicion.value && rol.value.id === id) cancelarEdicion();
+        if (modoEdicion.value && rol.value.id === id) cancelarEdicion();  // Si se borra/cancela el que estaba en edición, también cancela el modo
         await cargarRoles();
     } catch (error) {
         console.error("Error DELETE:", error.response?.data);
@@ -170,7 +183,7 @@ const eliminarRol = async (id) => {
     }
 };
 
-const mostrarMensaje = (texto, esError) => {
+const mostrarMensaje = (texto, esError) => {  // Helper: actualiza mensaje + flag de error en un solo lugar
     mensaje.value      = texto;
     mensajeError.value = esError;
 };

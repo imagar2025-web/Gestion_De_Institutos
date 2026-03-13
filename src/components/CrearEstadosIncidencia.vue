@@ -69,53 +69,66 @@
 </template>
 
 <script setup>
+
+// ─────────────────────────────────────────────────────────────
+// CrearEstadosIncidencia.vue  —  CRUD completo de Estado de Incidencia
+// Tabla de estados posibles de una incidencia (PENT, PROC, REST…).
+// Patrón común a todos los CRUDs del proyecto:
+//   - GET al montar → lista en tabla
+//   - POST formulario → insertar
+//   - PUT fila → cargarEnFormulario() activa modoEdicion, luego actualizar
+//   - DELETE fila → confirmar con window.confirm(), luego eliminar
+//   - modoEdicion: controla si el formulario está en modo crear o editar
+//   - PK: id (deshabilitado en edición, no se puede cambiar)
+// ─────────────────────────────────────────────────────────────
+
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { URL } from "@/variablesGlobales";
 
-const API_URL = URL;
+const API_URL = URL;  // URL base de la API
 const Z       = "?zusuario=ivan";
 
 const estados      = ref([]);
 const mensaje      = ref("");
-const mensajeError = ref(false);
-const cargando     = ref(false);
-const modoEdicion  = ref(false);
+const mensajeError = ref(false);  // Distingue mensaje de éxito (false=verde) de error (true=rojo)
+const cargando     = ref(false);  // true mientras se ejecuta una petición GET
+const modoEdicion  = ref(false);  // Controla si el formulario muestra el modo crear o editar
 
 const estadoVacio = () => ({
     id:       "",
     nombre:   "",
-    zfecha:   new Date().toISOString().slice(0, 10),
-    zusuario: "ivan"
+    zfecha:   new Date().toISOString().slice(0, 10),  // Fecha de auditoría YYYY-MM-DD
+    zusuario: "ivan"  // Usuario que realiza la operación (requerido por la API)
 });
 
 const estado = ref(estadoVacio());
 
-onMounted(() => cargarEstados());
+onMounted(() => cargarEstados());  // Carga inicial de datos al montar el componente
 
 // GET
-const cargarEstados = async () => {
-    cargando.value = true;
+const cargarEstados = async () => {  // GET → carga datos de la API y rellena la tabla
+    cargando.value = true;  // Activa el spinner de carga
     try {
         const res = await axios.get(`${API_URL}/estados_incidencia${Z}`);
         estados.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar los estados", true);
     } finally {
-        cargando.value = false;
+        cargando.value = false;  // El bloque finally apaga el spinner siempre, incluso si hay error
     }
 };
 
 // POST
-const insertarEstado = async () => {
+const insertarEstado = async () => {  // POST → crea un nuevo registro en la BD
     try {
-        mostrarMensaje("Enviando...", false);
+        mostrarMensaje("Enviando...", false);  // Feedback inmediato antes de esperar respuesta del servidor
         await axios.post(`${API_URL}/estados_incidencia${Z}`, estado.value);
         mostrarMensaje("✅ Estado creado correctamente", false);
         estado.value = estadoVacio();
         await cargarEstados();
     } catch (error) {
-        if (error.response?.data?.error?.includes("duplicate key")) {
+        if (error.response?.data?.error?.includes("duplicate key")) {  // Error de clave duplicada en la BD → mensaje específico al usuario
             mostrarMensaje(`❌ El estado "${estado.value.id}" ya existe`, true);
         } else {
             console.error("Error POST:", error.response?.data);
@@ -125,19 +138,19 @@ const insertarEstado = async () => {
 };
 
 // PUT
-const cargarEnFormulario = (e) => {
-    estado.value      = { ...e, zfecha: new Date().toISOString().slice(0, 10), zusuario: "ivan" };
-    modoEdicion.value = true;
-    mensaje.value     = "";
-    window.scrollTo({ top: 0, behavior: "smooth" });
+const cargarEnFormulario = (e) => {  // GET → carga datos de la API y rellena la tabla
+    estado.value      = { ...e, zfecha: new Date().toISOString().slice(0, 10), zusuario: "ivan" };  // Fecha de auditoría YYYY-MM-DD
+    modoEdicion.value = true;  // Activa el modo edición: el título y el botón del formulario cambian
+    mensaje.value     = "";  // Limpia el mensaje anterior para no desorientar al usuario
+    window.scrollTo({ top: 0, behavior: "smooth" });  // Desplaza la vista al formulario para que el usuario vea los cambios
 };
 
-const actualizarEstado = async () => {
+const actualizarEstado = async () => {  // PUT → actualiza el registro editado en la BD
     try {
         mostrarMensaje("Guardando...", false);
         await axios.put(`${API_URL}/estados_incidencia/${estado.value.id}${Z}`, estado.value);
         mostrarMensaje("✅ Estado actualizado correctamente", false);
-        cancelarEdicion();
+        cancelarEdicion();  // Resetea el formulario y desactiva modoEdicion sin guardar cambios
         await cargarEstados();
     } catch (error) {
         console.error("Error PUT:", error.response?.data);
@@ -148,16 +161,16 @@ const actualizarEstado = async () => {
 const cancelarEdicion = () => {
     estado.value      = estadoVacio();
     modoEdicion.value = false;
-    mensaje.value     = "";
+    mensaje.value     = "";  // Limpia el mensaje anterior para no desorientar al usuario
 };
 
 // DELETE
-const eliminarEstado = async (id) => {
-    if (!confirm(`¿Seguro que quieres eliminar el estado "${id}"?`)) return;
+const eliminarEstado = async (id) => {  // DELETE → elimina el registro tras confirmación
+    if (!confirm(`¿Seguro que quieres eliminar el estado "${id}"?`)) return;  // Confirmación nativa del navegador antes de borrar un registro
     try {
         await axios.delete(`${API_URL}/estados_incidencia/${id}${Z}`);
         mostrarMensaje("✅ Estado eliminado correctamente", false);
-        if (modoEdicion.value && estado.value.id === id) cancelarEdicion();
+        if (modoEdicion.value && estado.value.id === id) cancelarEdicion();  // Si se borra/cancela el que estaba en edición, también cancela el modo
         await cargarEstados();
     } catch (error) {
         console.error("Error DELETE:", error.response?.data);
@@ -165,7 +178,7 @@ const eliminarEstado = async (id) => {
     }
 };
 
-const mostrarMensaje = (texto, esError) => {
+const mostrarMensaje = (texto, esError) => {  // Helper: actualiza mensaje + flag de error en un solo lugar
     mensaje.value      = texto;
     mensajeError.value = esError;
 };

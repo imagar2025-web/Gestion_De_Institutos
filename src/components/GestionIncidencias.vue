@@ -1,133 +1,140 @@
 <template>
-    <div class="page">
-        <div class="card">
+  <div class="page">
+    <div class="card">
 
-            <h3>{{ modoEdicion ? '✏️ Editar Incidencia' : '➕ Crear Incidencia' }}</h3>
+      <!-- El título cambia dinámicamente según si se está creando o editando -->
+      <h3>{{ modoEdicion ? '✏️ Editar Incidencia' : '➕ Crear Incidencia' }}</h3>
 
-            <form @submit.prevent="modoEdicion ? actualizarIncidencia() : insertarIncidencia()">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>ID</label>
-                        <input type="number" v-model="incidencia.id" :disabled="modoEdicion" required>
-                        <small v-if="modoEdicion" class="hint">El ID no se puede modificar</small>
-                    </div>
-                    <div class="form-group">
-                        <label>Espacio</label>
-                        <select v-model="incidencia.espacio_id" required>
-                            <option value="">-- Selecciona un espacio --</option>
-                            <option v-for="e in espacios" :key="e.id" :value="e.id">
-                                {{ e.nombre }} — Planta {{ e.ubicacion_planta }}
-                            </option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Usuario que la reporta</label>
-                        <select v-model="incidencia.usuario_login" required>
-                            <option value="">-- Selecciona un usuario --</option>
-                            <option v-for="u in usuarios" :key="u.login" :value="u.login">
-                                {{ u.login }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Estado</label>
-                        <select v-model="incidencia.estado_incidencia_id" required>
-                            <option value="">-- Selecciona un estado --</option>
-                            <option v-for="e in estadosIncidencia" :key="e.id" :value="e.id">
-                                {{ e.id }} — {{ e.nombre }}
-                            </option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Descripción del problema</label>
-                    <textarea v-model="incidencia.descripcion_problema" rows="3" required></textarea>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Responsable resolución</label>
-                        <input v-model="incidencia.responsable_resolucion_id">
-                    </div>
-                    <div class="form-group">
-                        <label>Fecha resolución</label>
-                        <input type="date" v-model="incidencia.fecha_resolucion">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Comentarios resolución</label>
-                    <textarea v-model="incidencia.comentarios_resolucion" rows="2"></textarea>
-                </div>
-
-                <div class="form-botones">
-                    <button type="submit" class="btn-primary">
-                        {{ modoEdicion ? '💾 Guardar cambios' : '➕ Insertar incidencia' }}
-                    </button>
-                    <button v-if="modoEdicion" type="button" class="btn-secundario" @click="cancelarEdicion">
-                        ✖ Cancelar
-                    </button>
-                </div>
-            </form>
-
-            <p v-if="mensaje" :class="mensajeError ? 'msg-error' : 'msg-ok'">{{ mensaje }}</p>
-
-            <div class="tabla-header">
-                <h3>📋 Incidencias registradas</h3>
-                <button class="btn-refrescar" @click="cargarIncidencias">🔄 Refrescar</button>
-            </div>
-
-            <p v-if="cargando" class="msg-cargando">⏳ Cargando...</p>
-            <div v-else-if="incidencias.length === 0" class="vacio">No hay incidencias registradas</div>
-            <div v-else class="tabla-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Espacio</th>
-                            <th>Usuario</th>
-                            <th>Descripción</th>
-                            <th>Estado</th>
-                            <th>Responsable</th>
-                            <th>Fecha resolución</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="i in incidencias" :key="i.id"
-                            :class="{ 'fila-editando': modoEdicion && incidencia.id == i.id }">
-                            <td>{{ i.id }}</td>
-                            <td>{{ i.espacio_id }}</td>
-                            <td>{{ i.usuario_login }}</td>
-                            <td class="truncar">{{ i.descripcion_problema }}</td>
-                            <td>
-                                <span class="badge" :class="i.estado_incidencia_id === 'REST' ? 'badge-ok' : 'badge-pending'">
-                                    {{ i.estado_incidencia_id }}
-                                </span>
-                            </td>
-                            <td>{{ i.responsable_resolucion_id || '—' }}</td>
-                            <td>{{ i.fecha_resolucion ? i.fecha_resolucion.slice(0,10) : '—' }}</td>
-                            <td class="acciones">
-                                <button class="btn-editar" @click="cargarEnFormulario(i)">✏️ Editar</button>
-                                <button class="btn-eliminar" @click="eliminarIncidencia(i.id)">🗑️ Eliminar</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
+      <form @submit.prevent="modoEdicion ? actualizarIncidencia() : insertarIncidencia()">
+        <div class="form-row">
+          <div class="form-group">
+            <label>ID</label>
+            <!-- :disabled en modo edición impide cambiar la PK -->
+            <input type="number" v-model="incidencia.id" :disabled="modoEdicion" required>
+            <small v-if="modoEdicion" class="hint">El ID no se puede modificar</small>
+          </div>
+          <div class="form-group">
+            <label>Espacio</label>
+            <select v-model="incidencia.espacio_id" required>
+              <option value="">-- Selecciona un espacio --</option>
+              <option v-for="e in espacios" :key="e.id" :value="e.id">
+                {{ e.nombre }} — Planta {{ e.ubicacion_planta }}
+              </option>
+            </select>
+          </div>
         </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Usuario que la reporta</label>
+            <select v-model="incidencia.usuario_login" required>
+              <option value="">-- Selecciona un usuario --</option>
+              <option v-for="u in usuarios" :key="u.login" :value="u.login">
+                {{ u.login }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <select v-model="incidencia.estado_incidencia_id" required>
+              <option value="">-- Selecciona un estado --</option>
+              <option v-for="e in estadosIncidencia" :key="e.id" :value="e.id">
+                {{ e.id }} — {{ e.nombre }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descripción del problema</label>
+          <textarea v-model="incidencia.descripcion_problema" rows="3" required></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Responsable resolución</label>
+            <input v-model="incidencia.responsable_resolucion_id">
+          </div>
+          <div class="form-group">
+            <label>Fecha resolución</label>
+            <input type="date" v-model="incidencia.fecha_resolucion">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Comentarios resolución</label>
+          <textarea v-model="incidencia.comentarios_resolucion" rows="2"></textarea>
+        </div>
+
+        <div class="form-botones">
+          <button type="submit" class="btn-primary">
+            {{ modoEdicion ? '💾 Guardar cambios' : '➕ Insertar incidencia' }}
+          </button>
+          <button v-if="modoEdicion" type="button" class="btn-secundario" @click="cancelarEdicion">
+            ✖ Cancelar
+          </button>
+        </div>
+      </form>
+
+      <p v-if="mensaje" :class="mensajeError ? 'msg-error' : 'msg-ok'">{{ mensaje }}</p>
+
+      <div class="tabla-header">
+        <h3>📋 Incidencias registradas</h3>
+        <button class="btn-refrescar" @click="cargarIncidencias">🔄 Refrescar</button>
+      </div>
+
+      <p v-if="cargando" class="msg-cargando">⏳ Cargando...</p>
+      <div v-else-if="incidencias.length === 0" class="vacio">No hay incidencias registradas</div>
+      <div v-else class="tabla-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>Espacio</th><th>Usuario</th><th>Descripción</th>
+              <th>Estado</th><th>Responsable</th><th>Fecha resolución</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- == compara sin distinción de tipo (el ID puede llegar como string o número) -->
+            <tr v-for="i in incidencias" :key="i.id"
+              :class="{ 'fila-editando': modoEdicion && incidencia.id == i.id }">
+              <td>{{ i.id }}</td>
+              <td>{{ i.espacio_id }}</td>
+              <td>{{ i.usuario_login }}</td>
+              <td class="truncar">{{ i.descripcion_problema }}</td>
+              <td>
+                <!-- Badge verde para REST, naranja para el resto -->
+                <span class="badge" :class="i.estado_incidencia_id === 'REST' ? 'badge-ok' : 'badge-pending'">
+                  {{ i.estado_incidencia_id }}
+                </span>
+              </td>
+              <td>{{ i.responsable_resolucion_id || '—' }}</td>
+              <!-- .slice(0,10) muestra solo la fecha sin la hora -->
+              <td>{{ i.fecha_resolucion ? i.fecha_resolucion.slice(0,10) : '—' }}</td>
+              <td class="acciones">
+                <button class="btn-editar" @click="cargarEnFormulario(i)">✏️ Editar</button>
+                <button class="btn-eliminar" @click="eliminarIncidencia(i.id)">🗑️ Eliminar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
     </div>
+  </div>
 </template>
 
 <script setup>
+// ─────────────────────────────────────────────────────────────
+// GestionIncidencias.vue  —  CRUD completo de Incidencias
+// Exclusivo para ADMIN. Permite crear, editar y BORRAR incidencias
+// del historial, cosa que no pueden hacer TIC ni PROF.
+// Carga los selectores de espacio, usuario y estado desde la API.
+// ─────────────────────────────────────────────────────────────
+
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { URL } from "@/variablesGlobales";
 
 const API_URL = URL;
-const Z       = "?zusuario=ivan";
+const Z       = "?zusuario=ivan";  // Parámetro de auditoría
 
+// Arrays reactivos para los selectores del formulario
 const incidencias       = ref([]);
 const espacios          = ref([]);
 const usuarios          = ref([]);
@@ -137,118 +144,133 @@ const mensajeError      = ref(false);
 const cargando          = ref(false);
 const modoEdicion       = ref(false);
 
+// Función factoría: devuelve incidencia vacía con estado inicial PENT
 const incidenciaVacia = () => ({
-    id:                        "",
-    espacio_id:                "",
-    usuario_login:             "",
-    descripcion_problema:      "",
-    estado_incidencia_id:      "PENT",
-    responsable_resolucion_id: "",
-    comentarios_resolucion:    "",
-    fecha_resolucion:          "",
-    zfecha:                    new Date().toISOString().slice(0, 10),
-    zusuario:                  "ivan"
+  id:                        "",
+  espacio_id:                "",
+  usuario_login:             "",
+  descripcion_problema:      "",
+  estado_incidencia_id:      "PENT",  // Estado por defecto al crear manualmente
+  responsable_resolucion_id: "",
+  comentarios_resolucion:    "",
+  fecha_resolucion:          "",
+  zfecha:                    new Date().toISOString().slice(0, 10),
+  zusuario:                  "ivan"
 });
 
 const incidencia = ref(incidenciaVacia());
 
+// Carga todos los selectores e incidencias en paralelo
 onMounted(async () => {
-    await Promise.all([cargarEspacios(), cargarUsuarios(), cargarEstadosIncidencia(), cargarIncidencias()]);
+  await Promise.all([cargarEspacios(), cargarUsuarios(), cargarEstadosIncidencia(), cargarIncidencias()]);
 });
 
+// GET para rellenar el selector de espacios
 const cargarEspacios = async () => {
-    try {
-        const res = await axios.get(`${API_URL}/espacios${Z}`);
-        espacios.value = res.data;
-    } catch (error) { console.error("Error cargando espacios:", error); }
+  try {
+    const res = await axios.get(`${API_URL}/espacios${Z}`);
+    espacios.value = res.data;
+  } catch (error) { console.error("Error cargando espacios:", error); }
 };
 
+// GET para rellenar el selector de usuarios
 const cargarUsuarios = async () => {
-    try {
-        const res = await axios.get(`${API_URL}/usuarios${Z}`);
-        usuarios.value = res.data;
-    } catch (error) { console.error("Error cargando usuarios:", error); }
+  try {
+    const res = await axios.get(`${API_URL}/usuarios${Z}`);
+    usuarios.value = res.data;
+  } catch (error) { console.error("Error cargando usuarios:", error); }
 };
 
+// GET para rellenar el selector de estados de incidencia
 const cargarEstadosIncidencia = async () => {
-    try {
-        const res = await axios.get(`${API_URL}/estados_incidencia${Z}`);
-        estadosIncidencia.value = res.data;
-    } catch (error) { console.error("Error cargando estados incidencia:", error); }
+  try {
+    const res = await axios.get(`${API_URL}/estados_incidencia${Z}`);
+    estadosIncidencia.value = res.data;
+  } catch (error) { console.error("Error cargando estados incidencia:", error); }
 };
 
+// GET incidencias → todas las incidencias del sistema (sin filtro por usuario)
 const cargarIncidencias = async () => {
-    cargando.value = true;
-    try {
-        const res = await axios.get(`${API_URL}/incidencias${Z}`);
-        incidencias.value = res.data;
-    } catch (error) {
-        mostrarMensaje("❌ No se pudieron cargar las incidencias", true);
-    } finally {
-        cargando.value = false;
-    }
+  cargando.value = true;
+  try {
+    const res = await axios.get(`${API_URL}/incidencias${Z}`);
+    incidencias.value = res.data;
+  } catch (error) {
+    mostrarMensaje("❌ No se pudieron cargar las incidencias", true);
+  } finally {
+    cargando.value = false;
+  }
 };
 
+// POST → crea una incidencia manualmente (uso administrativo)
 const insertarIncidencia = async () => {
-    try {
-        mostrarMensaje("Enviando...", false);
-        await axios.post(`${API_URL}/incidencias${Z}`, incidencia.value);
-        mostrarMensaje("✅ Incidencia creada correctamente", false);
-        incidencia.value = incidenciaVacia();
-        await cargarIncidencias();
-    } catch (error) {
-        console.error("Error POST:", error.response?.data);
-        mostrarMensaje("❌ El servidor rechazó los datos", true);
-    }
+  try {
+    mostrarMensaje("Enviando...", false);
+    await axios.post(`${API_URL}/incidencias${Z}`, incidencia.value);
+    mostrarMensaje("✅ Incidencia creada correctamente", false);
+    incidencia.value = incidenciaVacia();
+    await cargarIncidencias();
+  } catch (error) {
+    console.error("Error POST:", error.response?.data);
+    mostrarMensaje("❌ El servidor rechazó los datos", true);
+  }
 };
 
+// Carga los datos de la fila seleccionada en el formulario para editarlos.
+// fecha_resolucion puede venir con timestamp → se normaliza a YYYY-MM-DD
+// para que sea compatible con el input type="date".
 const cargarEnFormulario = (i) => {
-    incidencia.value  = {
-        ...i,
-        fecha_resolucion: i.fecha_resolucion ? i.fecha_resolucion.slice(0, 10) : "",
-        zfecha:           new Date().toISOString().slice(0, 10),
-        zusuario:         "ivan"
-    };
-    modoEdicion.value = true;
-    mensaje.value     = "";
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  incidencia.value  = {
+    ...i,  // Spread: copia todos los campos de la incidencia
+    fecha_resolucion: i.fecha_resolucion ? i.fecha_resolucion.slice(0, 10) : "",
+    zfecha:           new Date().toISOString().slice(0, 10),
+    zusuario:         "ivan"
+  };
+  modoEdicion.value = true;
+  mensaje.value     = "";
+  window.scrollTo({ top: 0, behavior: "smooth" });  // Sube al formulario
 };
 
+// PUT → actualiza la incidencia editada
 const actualizarIncidencia = async () => {
-    try {
-        mostrarMensaje("Guardando...", false);
-        await axios.put(`${API_URL}/incidencias/${incidencia.value.id}${Z}`, incidencia.value);
-        mostrarMensaje("✅ Incidencia actualizada correctamente", false);
-        cancelarEdicion();
-        await cargarIncidencias();
-    } catch (error) {
-        console.error("Error PUT:", error.response?.data);
-        mostrarMensaje("❌ No se pudo actualizar la incidencia", true);
-    }
+  try {
+    mostrarMensaje("Guardando...", false);
+    await axios.put(`${API_URL}/incidencias/${incidencia.value.id}${Z}`, incidencia.value);
+    mostrarMensaje("✅ Incidencia actualizada correctamente", false);
+    cancelarEdicion();
+    await cargarIncidencias();
+  } catch (error) {
+    console.error("Error PUT:", error.response?.data);
+    mostrarMensaje("❌ No se pudo actualizar la incidencia", true);
+  }
 };
 
+// Cancela la edición sin guardar: resetea formulario y desactiva modoEdicion
 const cancelarEdicion = () => {
-    incidencia.value  = incidenciaVacia();
-    modoEdicion.value = false;
-    mensaje.value     = "";
+  incidencia.value  = incidenciaVacia();
+  modoEdicion.value = false;
+  mensaje.value     = "";
 };
 
+// DELETE → único rol que puede borrar incidencias del historial es ADMIN
+// == sin tipo porque el ID puede ser number o string según el origen
 const eliminarIncidencia = async (id) => {
-    if (!confirm(`¿Seguro que quieres eliminar la incidencia #${id}?`)) return;
-    try {
-        await axios.delete(`${API_URL}/incidencias/${id}${Z}`);
-        mostrarMensaje("✅ Incidencia eliminada correctamente", false);
-        if (modoEdicion.value && incidencia.value.id == id) cancelarEdicion();
-        await cargarIncidencias();
-    } catch (error) {
-        console.error("Error DELETE:", error.response?.data);
-        mostrarMensaje("❌ No se pudo eliminar la incidencia", true);
-    }
+  if (!confirm(`¿Seguro que quieres eliminar la incidencia #${id}?`)) return;
+  try {
+    await axios.delete(`${API_URL}/incidencias/${id}${Z}`);
+    mostrarMensaje("✅ Incidencia eliminada correctamente", false);
+    if (modoEdicion.value && incidencia.value.id == id) cancelarEdicion();
+    await cargarIncidencias();
+  } catch (error) {
+    console.error("Error DELETE:", error.response?.data);
+    mostrarMensaje("❌ No se pudo eliminar la incidencia", true);
+  }
 };
 
+// Helper centralizado para asignar mensaje + flag de error
 const mostrarMensaje = (texto, esError) => {
-    mensaje.value      = texto;
-    mensajeError.value = esError;
+  mensaje.value      = texto;
+  mensajeError.value = esError;
 };
 </script>
 

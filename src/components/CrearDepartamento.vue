@@ -80,12 +80,25 @@
 </template>
 
 <script setup>
+
+// ─────────────────────────────────────────────────────────────
+// CrearDepartamento.vue  —  CRUD completo de Departamento
+// Tabla maestra de departamentos del centro.
+// Patrón común a todos los CRUDs del proyecto:
+//   - GET al montar → lista en tabla
+//   - POST formulario → insertar
+//   - PUT fila → cargarEnFormulario() activa modoEdicion, luego actualizar
+//   - DELETE fila → confirmar con window.confirm(), luego eliminar
+//   - modoEdicion: controla si el formulario está en modo crear o editar
+//   - PK: id (deshabilitado en edición, no se puede cambiar)
+// ─────────────────────────────────────────────────────────────
+
 import { ref, onMounted } from "vue";
 import axios from "axios";
 import { URL } from "@/variablesGlobales";
 
-const API_URL = URL;
-const Z = "?zusuario=ivan";
+const API_URL = URL;  // URL base de la API
+const Z = "?zusuario=ivan";  // Parámetro de auditoría requerido por todos los endpoints
 
 const departamentos = ref([]);
 const mensaje       = ref("");
@@ -98,37 +111,37 @@ const deptoVacio = () => ({
     nombre:          "",
     ubicacion:       "",
     correo_contacto: "",
-    zfecha:          new Date().toISOString().split("T")[0],
-    zusuario:        "ivan"
+    zfecha:          new Date().toISOString().split("T")[0],  // Fecha de auditoría YYYY-MM-DD
+    zusuario:        "ivan"  // Usuario que realiza la operación (requerido por la API)
 });
 
 const departamento = ref(deptoVacio());
 
-onMounted(() => cargarDepartamentos());
+onMounted(() => cargarDepartamentos());  // Carga inicial de datos al montar el componente
 
 // GET
-const cargarDepartamentos = async () => {
-    cargando.value = true;
+const cargarDepartamentos = async () => {  // GET → carga datos de la API y rellena la tabla
+    cargando.value = true;  // Activa el spinner de carga
     try {
         const res = await axios.get(`${API_URL}/departamentos${Z}`);
         departamentos.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar los departamentos", true);
     } finally {
-        cargando.value = false;
+        cargando.value = false;  // El bloque finally apaga el spinner siempre, incluso si hay error
     }
 };
 
 // POST
-const insertarDepartamento = async () => {
+const insertarDepartamento = async () => {  // POST → crea un nuevo registro en la BD
     try {
-        mostrarMensaje("Enviando...", false);
+        mostrarMensaje("Enviando...", false);  // Feedback inmediato antes de esperar respuesta del servidor
         await axios.post(`${API_URL}/departamentos${Z}`, departamento.value);
         mostrarMensaje("✅ Departamento creado correctamente", false);
         departamento.value = deptoVacio();
         await cargarDepartamentos();
     } catch (error) {
-        if (error.response?.data?.error?.includes("duplicate key")) {
+        if (error.response?.data?.error?.includes("duplicate key")) {  // Error de clave duplicada en la BD → mensaje específico al usuario
             mostrarMensaje(`❌ El departamento "${departamento.value.id}" ya existe`, true);
         } else {
             console.error("Error POST:", error.response?.data);
@@ -138,19 +151,19 @@ const insertarDepartamento = async () => {
 };
 
 // PUT
-const cargarEnFormulario = (d) => {
-    departamento.value = { ...d, zfecha: new Date().toISOString().split("T")[0], zusuario: "ivan" };
+const cargarEnFormulario = (d) => {  // GET → carga datos de la API y rellena la tabla
+    departamento.value = { ...d, zfecha: new Date().toISOString().split("T")[0], zusuario: "ivan" };  // Fecha de auditoría YYYY-MM-DD
     modoEdicion.value  = true;
     mensaje.value      = "";
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });  // Desplaza la vista al formulario para que el usuario vea los cambios
 };
 
-const actualizarDepartamento = async () => {
+const actualizarDepartamento = async () => {  // PUT → actualiza el registro editado en la BD
     try {
         mostrarMensaje("Guardando...", false);
         await axios.put(`${API_URL}/departamentos/${departamento.value.id}${Z}`, departamento.value);
         mostrarMensaje("✅ Departamento actualizado correctamente", false);
-        cancelarEdicion();
+        cancelarEdicion();  // Resetea el formulario y desactiva modoEdicion sin guardar cambios
         await cargarDepartamentos();
     } catch (error) {
         console.error("Error PUT:", error.response?.data);
@@ -165,12 +178,12 @@ const cancelarEdicion = () => {
 };
 
 // DELETE
-const eliminarDepartamento = async (id) => {
-    if (!confirm(`¿Seguro que quieres eliminar el departamento "${id}"?`)) return;
+const eliminarDepartamento = async (id) => {  // DELETE → elimina el registro tras confirmación
+    if (!confirm(`¿Seguro que quieres eliminar el departamento "${id}"?`)) return;  // Confirmación nativa del navegador antes de borrar un registro
     try {
         await axios.delete(`${API_URL}/departamentos/${id}${Z}`);
         mostrarMensaje("✅ Departamento eliminado correctamente", false);
-        if (modoEdicion.value && departamento.value.id === id) cancelarEdicion();
+        if (modoEdicion.value && departamento.value.id === id) cancelarEdicion();  // Si se borra/cancela el que estaba en edición, también cancela el modo
         await cargarDepartamentos();
     } catch (error) {
         console.error("Error DELETE:", error.response?.data);
@@ -178,7 +191,7 @@ const eliminarDepartamento = async (id) => {
     }
 };
 
-const mostrarMensaje = (texto, esError) => {
+const mostrarMensaje = (texto, esError) => {  // Helper: actualiza mensaje + flag de error en un solo lugar
     mensaje.value      = texto;
     mensajeError.value = esError;
 };

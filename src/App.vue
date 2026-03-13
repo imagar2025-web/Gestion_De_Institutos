@@ -1,12 +1,16 @@
 <template>
   <div>
-    <!-- NAVBAR - solo visible si hay sesión -->
+    <!-- La navbar solo se muestra cuando existe una sesión activa.
+         Si usuarioLogado es false (antes del login o tras cerrar sesión)
+         el nav no se renderiza en el DOM. -->
     <nav v-if="usuarioLogado">
       <div class="nav-brand">🏫 Gestión de Institutos</div>
 
       <div class="nav-links">
 
-        <!-- INCIDENCIAS - todos los roles -->
+        <!-- INCIDENCIAS — todos los roles pueden crear.
+             Solo ADMIN y TIC pueden resolver.
+             Solo ADMIN tiene acceso a la gestión completa. -->
         <div class="nav-group">
           <span class="nav-group-label">Incidencias</span>
           <router-link to="/creaIncidencias">Crear</router-link>
@@ -14,14 +18,16 @@
           <router-link v-if="esAdmin" to="/gestionIncidencias">Gestión completa</router-link>
         </div>
 
-        <!-- ESPACIOS - Profesor, TIC y Admin -->
+        <!-- ESPACIOS — visible para ADMIN, TIC y PROF.
+             Solo ADMIN ve el enlace de gestionar espacios. -->
         <div class="nav-group" v-if="esAdmin || esProfesor || esTIC">
           <span class="nav-group-label">Espacios</span>
           <router-link to="/reservarAula">Reservar aula</router-link>
           <router-link v-if="esAdmin" to="/creEspacios">Gestionar</router-link>
         </div>
 
-        <!-- MANTENIMIENTO - solo Admin -->
+        <!-- MANTENIMIENTO — solo ADMIN.
+             Contiene todos los CRUDs de tablas maestras. -->
         <div class="nav-group" v-if="esAdmin">
           <span class="nav-group-label">Mantenimiento</span>
           <router-link to="/creaRoles">Roles</router-link>
@@ -39,35 +45,54 @@
 
       </div>
 
-      <!-- Usuario logado + cerrar sesión -->
+      <!-- Muestra nombre, apellidos y rol del usuario logado.
+           El botón limpia sessionStorage y redirige al login. -->
       <div class="nav-user">
         <span>👤 {{ usuario.nombre }} {{ usuario.apellidos }} — {{ usuario.rol }}</span>
         <button class="btn-logout" @click="cerrarSesion">Cerrar sesión</button>
       </div>
     </nav>
 
+    <!-- Aquí Vue Router renderiza el componente de la ruta activa -->
     <router-view />
   </div>
 </template>
 
 <script setup>
+// Composition API con <script setup>:
+// todo lo declarado aquí es directamente accesible en el template.
 import { ref, computed, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 
+// useRouter → instancia del router para programar navegación (push, replace…)
+// useRoute  → objeto reactivo con info de la ruta actual (path, params, query…)
 const router = useRouter();
 const route  = useRoute();
 
+// Objeto reactivo que almacena los datos del usuario logado.
+// Se rellena leyendo sessionStorage en cargarSesion().
 const usuario      = ref({ login: "", rol: "", nombre: "", apellidos: "" });
+
+// Flag reactivo que controla si se muestra la navbar o no.
 const usuarioLogado = ref(false);
 
+// ── Vigilar cambios de ruta ──────────────────────────────────
+// watch detecta cambios en route.path. Cada vez que el usuario
+// navega a otra página, se re-lee sessionStorage para sincronizar
+// el estado de la navbar (útil si otra pestaña cierra sesión).
 watch(() => route.path, () => {
   cargarSesion();
 });
 
+// Al montar el componente raíz se lee sessionStorage por primera vez,
+// asegurando que la navbar aparezca si ya había sesión activa.
 onMounted(() => {
   cargarSesion();
 });
 
+// ── Leer sesión de sessionStorage ────────────────────────────
+// sessionStorage.getItem devuelve null si no existe la clave.
+// Si existe, el JSON se parsea y se asigna al ref usuario.
 const cargarSesion = () => {
   const datos = sessionStorage.getItem("usuario");
   if (datos) {
@@ -78,10 +103,20 @@ const cargarSesion = () => {
   }
 };
 
+// ── Computed de rol ───────────────────────────────────────────
+// Computed son propiedades derivadas y cacheadas; solo se recalculan
+// cuando cambia usuario.value.rol.
+// Se usa includes() y toLowerCase() para comparar de forma flexible
+// (ej: "ADMIN", "admin" y "Admin" son equivalentes).
 const esAdmin    = computed(() => usuario.value.rol?.toLowerCase().includes("admin"));
 const esTIC      = computed(() => usuario.value.rol?.toLowerCase().includes("tic"));
 const esProfesor = computed(() => usuario.value.rol?.toLowerCase().includes("prof"));
 
+// ── Cerrar sesión ────────────────────────────────────────────
+// 1. Elimina la clave "usuario" de sessionStorage → el usuario
+//    queda deslogado aunque refresque la página.
+// 2. Pone usuarioLogado a false → la navbar desaparece inmediatamente.
+// 3. Redirige al login mediante router.push().
 const cerrarSesion = () => {
   sessionStorage.removeItem("usuario");
   usuarioLogado.value = false;
@@ -163,6 +198,9 @@ nav a:hover {
   color: #fff;
 }
 
+/* La clase router-link-exact-active la añade Vue Router
+   automáticamente al enlace cuya ruta coincide exactamente
+   con la URL actual → resaltado visual de la página activa. */
 nav a.router-link-exact-active {
   color: #42b983;
   background-color: rgba(66, 185, 131, 0.15);
