@@ -1,3 +1,4 @@
+<!-- Vista estática: HomeView.vue — No usa API, no necesita mock -->
 <template>
   <div class="home">
     <img alt="Vue logo" src="../assets/logo.png">

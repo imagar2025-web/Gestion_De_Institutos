@@ -1,3 +1,9 @@
+// =============================================================================
+// ARCHIVO: src/components/CrearEstadosIncidencia.vue — CRUD de estados de incidencia
+// =============================================================================
+// PROPÓSITO: Gestión de los estados del ciclo de incidencias (PENT, PROC, REST).
+// ENDPOINTS MOCK: GET/POST/PUT/DELETE /estados_incidencia
+// =============================================================================
 <template>
     <div class="page">
         <div class="card">
@@ -70,10 +76,17 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import axios from "axios";
-import { URL } from "@/variablesGlobales";
+// MOCK: Antes se importaba axios para peticiones HTTP reales al servidor.
+// import axios from "axios";
+// Ahora usamos fakeApi que hace las mismas operaciones en memoria local.
+import { fakeApi } from "@/mock/fakeApi";
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from "@/variablesGlobales";
+// URL original: http://44.207.19.239:3000
 
-const API_URL = URL;
+// MOCK: API_URL apunta a un placeholder. fakeApi solo necesita el nombre
+// del recurso (ej: "espacios"), el dominio se ignora.
+const API_URL = "http://mock";
 const Z       = "?zusuario=ivan";
 
 const estados      = ref([]);
@@ -97,7 +110,7 @@ onMounted(() => cargarEstados());
 const cargarEstados = async () => {
     cargando.value = true;
     try {
-        const res = await axios.get(`${API_URL}/estados_incidencia${Z}`);
+        const res = await fakeApi.get(`${API_URL}/estados_incidencia${Z}`);
         estados.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar los estados", true);
@@ -110,7 +123,7 @@ const cargarEstados = async () => {
 const insertarEstado = async () => {
     try {
         mostrarMensaje("Enviando...", false);
-        await axios.post(`${API_URL}/estados_incidencia${Z}`, estado.value);
+        await fakeApi.post(`${API_URL}/estados_incidencia${Z}`, estado.value);
         mostrarMensaje("✅ Estado creado correctamente", false);
         estado.value = estadoVacio();
         await cargarEstados();
@@ -135,7 +148,7 @@ const cargarEnFormulario = (e) => {
 const actualizarEstado = async () => {
     try {
         mostrarMensaje("Guardando...", false);
-        await axios.put(`${API_URL}/estados_incidencia/${estado.value.id}${Z}`, estado.value);
+        await fakeApi.put(`${API_URL}/estados_incidencia/${estado.value.id}${Z}`, estado.value);
         mostrarMensaje("✅ Estado actualizado correctamente", false);
         cancelarEdicion();
         await cargarEstados();
@@ -155,7 +168,7 @@ const cancelarEdicion = () => {
 const eliminarEstado = async (id) => {
     if (!confirm(`¿Seguro que quieres eliminar el estado "${id}"?`)) return;
     try {
-        await axios.delete(`${API_URL}/estados_incidencia/${id}${Z}`);
+        await fakeApi.delete(`${API_URL}/estados_incidencia/${id}${Z}`);
         mostrarMensaje("✅ Estado eliminado correctamente", false);
         if (modoEdicion.value && estado.value.id === id) cancelarEdicion();
         await cargarEstados();

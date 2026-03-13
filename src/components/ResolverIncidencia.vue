@@ -1,3 +1,23 @@
+// =============================================================================
+// ARCHIVO: src/components/ResolverIncidencia.vue — Panel TIC para gestionar
+// =============================================================================
+// PROPÓSITO: Vista para que TIC/Admin gestionen el ciclo de incidencias:
+//   PENT → PROC (poner en mantenimiento) → REST (marcar como resuelta)
+//
+// ENDPOINTS MOCK USADOS:
+//   GET /estados_incidencia → para los filtros y badges de estado
+//   GET /usuarios           → para buscar el DNI del responsable logueado
+//   GET /incidencias        → para listar todas las incidencias
+//   PUT /incidencias/:id    → para cambiar estado, asignar responsable y resolución
+//
+// FLUJO DE DATOS:
+//   1. Carga estados + busca DNI del responsable en tabla usuarios
+//   2. Lista TODAS las incidencias (no filtra por login, a diferencia de CrearIncidencia)
+//   3. Cada incidencia muestra botones según su estado:
+//      - PENT: "Poner en mantenimiento" (→PROC) o "Resolver" (→REST, necesita comentario)
+//      - PROC: Solo "Resolver" (→REST, necesita comentario)
+//      - REST: Solo muestra el historial de resolución
+// =============================================================================
 <template>
     <div class="page">
         <div class="card">
@@ -90,10 +110,16 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted } from "vue";
-import axios from "axios";
-import { URL } from "@/variablesGlobales";
+// MOCK: Antes se importaba axios para peticiones HTTP reales al servidor.
+// import axios from "axios";
+// Ahora usamos fakeApi que hace las mismas operaciones en memoria local.
+import { fakeApi } from "@/mock/fakeApi";
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from "@/variablesGlobales";
+// URL original: http://44.207.19.239:3000
 
-const API_URL  = URL;
+// MOCK: API_URL placeholder
+const API_URL = "http://mock";
 const ZUSUARIO = "ivan";
 const Z        = `?zusuario=${ZUSUARIO}`;
 
@@ -121,7 +147,7 @@ onMounted(async () => {
 
 const cargarEstados = async () => {
     try {
-        const res = await axios.get(`${API_URL}/estados_incidencia${Z}`);
+        const res = await fakeApi.get(`${API_URL}/estados_incidencia${Z}`);
         estadosIncidencia.value = res.data;
         // Confirma los IDs reales de la BD
         res.data.forEach(e => {
@@ -136,7 +162,7 @@ const cargarEstados = async () => {
 
 const cargarDniResponsable = async () => {
     try {
-        const res       = await axios.get(`${API_URL}/usuarios${Z}`);
+        const res       = await fakeApi.get(`${API_URL}/usuarios${Z}`);
         const miUsuario = res.data.find(u => u.login === usuario.login);
         dniResponsable.value = miUsuario?.ref_identidad_fk || usuario.login;
     } catch (error) {
@@ -147,7 +173,7 @@ const cargarDniResponsable = async () => {
 const cargarIncidencias = async () => {
     cargando.value = true;
     try {
-        const res         = await axios.get(`${API_URL}/incidencias${Z}`);
+        const res         = await fakeApi.get(`${API_URL}/incidencias${Z}`);
         incidencias.value = res.data;
         res.data.forEach(inc => {
             if (!resoluciones[inc.id]) resoluciones[inc.id] = { comentario: "" };
@@ -185,7 +211,7 @@ const cambiarEstado = async (id, nuevoEstado, comentario) => {
             body.fecha_resolucion       = new Date().toISOString().slice(0, 10);
         }
 
-        await axios.put(`${API_URL}/incidencias/${id}${Z}`, body);
+        await fakeApi.put(`${API_URL}/incidencias/${id}${Z}`, body);
 
         const msgs = {
             [ID_PROC]: "🔧 Incidencia puesta en mantenimiento",

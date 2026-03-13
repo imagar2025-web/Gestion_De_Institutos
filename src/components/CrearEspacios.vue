@@ -1,3 +1,10 @@
+// =============================================================================
+// ARCHIVO: src/components/CrearEspacios.vue — CRUD de espacios/aulas
+// =============================================================================
+// PROPÓSITO: Permite al ADMIN crear, editar y eliminar espacios.
+// ENDPOINTS MOCK: GET/POST/PUT/DELETE /espacios
+// PATRÓN CRUD estándar: formulario + tabla con botones Editar/Eliminar
+// =============================================================================
 <template>
     <div class="page">
         <div class="card">
@@ -105,10 +112,17 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import axios from "axios";
-import { URL } from "@/variablesGlobales";
+// MOCK: Antes se importaba axios para peticiones HTTP reales al servidor.
+// import axios from "axios";
+// Ahora usamos fakeApi que hace las mismas operaciones en memoria local.
+import { fakeApi } from "@/mock/fakeApi";
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from "@/variablesGlobales";
+// URL original: http://44.207.19.239:3000
 
-const API_URL = URL;
+// MOCK: API_URL apunta a un placeholder. fakeApi solo necesita el nombre
+// del recurso (ej: "espacios"), el dominio se ignora.
+const API_URL = "http://mock";
 const Z = "?zusuario=ivan";
 
 const espacios = ref([]);
@@ -135,7 +149,7 @@ onMounted(() => cargarEspacios());
 const cargarEspacios = async () => {
     cargando.value = true;
     try {
-        const res = await axios.get(`${API_URL}/espacios${Z}`);
+        const res = await fakeApi.get(`${API_URL}/espacios${Z}`);
         espacios.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar los espacios", true);
@@ -147,7 +161,7 @@ const cargarEspacios = async () => {
 const insertarEspacio = async () => {
     try {
         mostrarMensaje("Enviando...", false);
-        await axios.post(`${API_URL}/espacios${Z}`, espacio.value);
+        await fakeApi.post(`${API_URL}/espacios${Z}`, espacio.value);
         mostrarMensaje("✅ Espacio creado correctamente", false);
         espacio.value = espacioVacio();
         await cargarEspacios();
@@ -171,7 +185,7 @@ const cargarEnFormulario = (e) => {
 const actualizarEspacio = async () => {
     try {
         mostrarMensaje("Guardando...", false);
-        await axios.put(`${API_URL}/espacios/${espacio.value.id}${Z}`, espacio.value);
+        await fakeApi.put(`${API_URL}/espacios/${espacio.value.id}${Z}`, espacio.value);
         mostrarMensaje("✅ Espacio actualizado correctamente", false);
         cancelarEdicion();
         await cargarEspacios();
@@ -190,7 +204,7 @@ const cancelarEdicion = () => {
 const eliminarEspacio = async (id) => {
     if (!confirm(`¿Seguro que quieres eliminar el espacio "${id}"?`)) return;
     try {
-        await axios.delete(`${API_URL}/espacios/${id}${Z}`);
+        await fakeApi.delete(`${API_URL}/espacios/${id}${Z}`);
         mostrarMensaje("✅ Espacio eliminado correctamente", false);
         if (modoEdicion.value && espacio.value.id === id) cancelarEdicion();
         await cargarEspacios();

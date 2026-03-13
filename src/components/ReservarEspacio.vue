@@ -1,3 +1,22 @@
+// =============================================================================
+// ARCHIVO: src/components/ReservarEspacio.vue — Sistema de reservas de aulas
+// =============================================================================
+// PROPÓSITO: Permite a profesores, TIC y admin reservar un espacio para una
+//   franja horaria concreta en una fecha determinada.
+//
+// ENDPOINTS MOCK USADOS:
+//   GET /espacios  → selector de aulas (deshabilitadas si no están operativas)
+//   GET /horarios  → todas las franjas horarias disponibles
+//   GET /reservas  → TODAS las reservas existentes (para calcular ocupación)
+//   POST /reservas → crear una nueva reserva
+//   DELETE /reservas/:id → cancelar una reserva
+//
+// LÓGICA CLAVE — horariosDisponibles (computed):
+//   Cruza TODAS las reservas con la fecha+espacio seleccionados para obtener
+//   los horarios ocupados, y devuelve solo los que están libres.
+//   Esto funciona exactamente igual con mock porque computed() lee los
+//   arrays reactivos de datos.js.
+// =============================================================================
 <template>
     <div class="page">
         <div class="card">
@@ -89,10 +108,17 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
-import axios from "axios";
-import { URL } from "@/variablesGlobales";
+// MOCK: Antes se importaba axios para peticiones HTTP reales al servidor.
+// import axios from "axios";
+// Ahora usamos fakeApi que hace las mismas operaciones en memoria local.
+import { fakeApi } from "@/mock/fakeApi";
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from "@/variablesGlobales";
+// URL original: http://44.207.19.239:3000
 
-const API_URL = URL;
+// MOCK: API_URL apunta a un placeholder. fakeApi solo necesita el nombre
+// del recurso (ej: "espacios"), el dominio se ignora.
+const API_URL = "http://mock";
 const ZUSUARIO = "ivan";
 const Z = `?zusuario=${ZUSUARIO}`;
 
@@ -131,7 +157,7 @@ onMounted(async () => {
 
 const cargarEspacios = async () => {
     try {
-        const res = await axios.get(`${API_URL}/espacios${Z}`);
+        const res = await fakeApi.get(`${API_URL}/espacios${Z}`);
         espacios.value = res.data;
     } catch (error) {
         console.error("Error cargando espacios:", error);
@@ -142,7 +168,7 @@ const cargarHorarios = async () => {
     cargandoHorarios.value = true;
     errorHorarios.value = false;
     try {
-        const res = await axios.get(`${API_URL}/horarios${Z}`);
+        const res = await fakeApi.get(`${API_URL}/horarios${Z}`);
         horarios.value = res.data;
     } catch (error) {
         console.error("Error cargando horarios:", error);
@@ -155,7 +181,7 @@ const cargarHorarios = async () => {
 // Carga TODAS las reservas para poder filtrar por fecha
 const cargarTodasLasReservas = async () => {
     try {
-        const res = await axios.get(`${API_URL}/reservas${Z}`);
+        const res = await fakeApi.get(`${API_URL}/reservas${Z}`);
         todasLasReservas.value = res.data;
     } catch (error) {
         console.error("Error cargando reservas:", error);
@@ -164,7 +190,7 @@ const cargarTodasLasReservas = async () => {
 
 const cargarMisReservas = async () => {
     try {
-        const res = await axios.get(`${API_URL}/reservas${Z}`);
+        const res = await fakeApi.get(`${API_URL}/reservas${Z}`);
         misReservas.value = res.data.filter(r => r.usuario_login === usuario.login);
     } catch (error) {
         console.error("Error cargando mis reservas:", error);
@@ -226,7 +252,7 @@ const hacerReserva = async () => {
         reserva.value.zfecha = new Date().toISOString().slice(0, 10);
         reserva.value.usuario_login = usuario.login || ZUSUARIO;
 
-        const response = await axios.post(
+        const response = await fakeApi.post(
             `${API_URL}/reservas?zusuario=${ZUSUARIO}`,
             reserva.value
         );
@@ -264,7 +290,7 @@ const hacerReserva = async () => {
 //  Cancelar reserva
 const cancelarReserva = async (id) => {
     try {
-        await axios.delete(`${API_URL}/reservas/${id}?zusuario=${ZUSUARIO}`);
+        await fakeApi.delete(`${API_URL}/reservas/${id}?zusuario=${ZUSUARIO}`);
         await cargarTodasLasReservas();
         await cargarMisReservas();
         mensaje.value = "✅ Reserva cancelada";

@@ -1,3 +1,23 @@
+// =============================================================================
+// ARCHIVO: src/components/Login.vue — Pantalla de autenticación
+// =============================================================================
+// PROPÓSITO: Formulario de login que valida credenciales contra la "API".
+//
+// FLUJO ORIGINAL (con API real):
+//   1. Usuario rellena login + password
+//   2. axios.post("/auth/login") envía credenciales al servidor
+//   3. El servidor comprueba en la BD y devuelve { usuario, rol, nombre, apellidos }
+//   4. Se guarda en sessionStorage → App.vue lee la sesión → muestra navbar
+//
+// FLUJO MOCK (sin API):
+//   1. Usuario rellena login + password (igual)
+//   2. fakeApi.post() busca en el array 'usuarios' de datos.js
+//   3. Comprueba password_hash y estado_id (permite_acceso)
+//   4. Devuelve los mismos campos → sessionStorage → App.vue (igual)
+//
+// USUARIOS DE PRUEBA: Adminivan/1234, TICale/1234, PROFcarlos/1234,
+//   ALUMpedro/1234, BLOQuser/1234 (bloqueado, no puede entrar)
+// =============================================================================
 <template>
     <div class="login-container">
         <div class="login-card">
@@ -34,10 +54,17 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import axios from "axios";
-import { URL } from "@/variablesGlobales";
+// MOCK: Antes se importaba axios para peticiones HTTP reales al servidor.
+// import axios from "axios";
+// Ahora usamos fakeApi que hace las mismas operaciones en memoria local.
+import { fakeApi } from "@/mock/fakeApi";
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from "@/variablesGlobales";
+// URL original: http://44.207.19.239:3000
 
-const API_URL = URL;
+// MOCK: API_URL apunta a un placeholder. fakeApi solo necesita el nombre
+// del recurso (ej: "espacios"), el dominio se ignora.
+const API_URL = "http://mock";
 const ZUSUARIO = "ivan";
 
 const router = useRouter();
@@ -56,7 +83,7 @@ const iniciarSesion = async () => {
         cargando.value = true;
         mensaje.value = "";
 
-        const response = await axios.post(
+        const response = await fakeApi.post(
             `${API_URL}/auth/login?zusuario=${ZUSUARIO}`,
             {
                 login: credenciales.value.login,

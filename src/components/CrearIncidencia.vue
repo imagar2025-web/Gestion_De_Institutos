@@ -1,3 +1,20 @@
+// =============================================================================
+// ARCHIVO: src/components/CrearIncidencia.vue — Crear y ver mis incidencias
+// =============================================================================
+// PROPÓSITO: Permite a CUALQUIER usuario crear una incidencia y ver las suyas.
+//
+// ENDPOINTS MOCK USADOS:
+//   GET /estados_incidencia → para asignar el estado inicial (PENT)
+//   GET /espacios           → para el selector de "espacio afectado"
+//   GET /incidencias        → para listar "mis incidencias" (filtradas por login)
+//   POST /incidencias       → para crear una nueva incidencia
+//
+// FLUJO DE DATOS:
+//   1. onMounted → carga estados, espacios e incidencias
+//   2. El formulario recoge descripcion + espacio_id
+//   3. enviarIncidencia() hace POST con estado=PENT y usuario_login del sessionStorage
+//   4. Después recarga la lista de "mis incidencias" con GET
+// =============================================================================
 <template>
     <div class="page">
         <div class="card">
@@ -55,10 +72,16 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import axios from "axios";
-import { URL } from "@/variablesGlobales";
+// MOCK: Antes se importaba axios para peticiones HTTP reales al servidor.
+// import axios from "axios";
+// Ahora usamos fakeApi que hace las mismas operaciones en memoria local.
+import { fakeApi } from "@/mock/fakeApi";
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from "@/variablesGlobales";
+// URL original: http://44.207.19.239:3000
 
-const API_URL  = URL;
+// MOCK: API_URL placeholder
+const API_URL = "http://mock";
 const ZUSUARIO = "ivan";
 const Z        = `?zusuario=${ZUSUARIO}`;
 
@@ -99,7 +122,7 @@ onMounted(async () => {
 
 const cargarEstados = async () => {
     try {
-        const res = await axios.get(`${API_URL}/estados_incidencia${Z}`);
+        const res = await fakeApi.get(`${API_URL}/estados_incidencia${Z}`);
         estadosIncidencia.value = res.data;
         res.data.forEach(e => {
             if (e.id === "PENT") ID_PENT = e.id;
@@ -113,7 +136,7 @@ const cargarEstados = async () => {
 
 const cargarEspacios = async () => {
     try {
-        const res = await axios.get(`${API_URL}/espacios${Z}`);
+        const res = await fakeApi.get(`${API_URL}/espacios${Z}`);
         espacios.value = res.data;
     } catch (error) {
         console.error("Error cargando espacios:", error);
@@ -123,7 +146,7 @@ const cargarEspacios = async () => {
 const cargarIncidencias = async () => {
     cargando.value = true;
     try {
-        const res = await axios.get(`${API_URL}/incidencias${Z}`);
+        const res = await fakeApi.get(`${API_URL}/incidencias${Z}`);
         if (usuario.rol?.toLowerCase().includes("admin")) {
             misIncidencias.value = res.data;
         } else {
@@ -143,7 +166,7 @@ const enviarIncidencia = async () => {
         incidencia.value.estado_incidencia_id = ID_PENT;
         incidencia.value.usuario_login        = usuario.login;
         incidencia.value.zfecha               = new Date().toISOString().slice(0, 10);
-        await axios.post(`${API_URL}/incidencias${Z}`, incidencia.value);
+        await fakeApi.post(`${API_URL}/incidencias${Z}`, incidencia.value);
         mostrarMensaje("✅ Incidencia creada correctamente", false);
         incidencia.value = incidenciaVacia();
         await cargarIncidencias();

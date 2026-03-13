@@ -1,3 +1,13 @@
+// =============================================================================
+// ARCHIVO: src/components/CrearUsuario.vue — CRUD de estados + usuarios
+// =============================================================================
+// PROPÓSITO: Componente DOBLE — gestiona estados de usuario Y usuarios.
+//   Tiene DOS formularios, DOS tablas, DOS flujos CRUD independientes.
+// ENDPOINTS MOCK:
+//   GET/POST/PUT/DELETE /estados_usuario → parte superior del componente
+//   GET/POST/PUT/DELETE /usuarios        → parte inferior (tras el <hr>)
+// NOTA: Los estados se crean ANTES que los usuarios (el usuario necesita un estado_id)
+// =============================================================================
 <template>
     <div class="page">
         <div class="card">
@@ -191,10 +201,17 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import axios from "axios";
-import { URL } from "@/variablesGlobales";
+// MOCK: Antes se importaba axios para peticiones HTTP reales al servidor.
+// import axios from "axios";
+// Ahora usamos fakeApi que hace las mismas operaciones en memoria local.
+import { fakeApi } from "@/mock/fakeApi";
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from "@/variablesGlobales";
+// URL original: http://44.207.19.239:3000
 
-const API_URL = URL;
+// MOCK: API_URL apunta a un placeholder. fakeApi solo necesita el nombre
+// del recurso (ej: "espacios"), el dominio se ignora.
+const API_URL = "http://mock";
 const Z = "?zusuario=ivan";
 
 // Estados predefinidos (plantillas) 
@@ -255,7 +272,7 @@ onMounted(async () => {
 const cargarEstados = async () => {
     cargandoEstados.value = true;
     try {
-        const res = await axios.get(`${API_URL}/estados_usuario${Z}`);
+        const res = await fakeApi.get(`${API_URL}/estados_usuario${Z}`);
         estados.value = res.data;
     } catch (error) {
         mostrarMensajeEstado("❌ No se pudieron cargar los estados", true);
@@ -276,7 +293,7 @@ const rellenarEstado = () => {
 const insertarEstado = async () => {
     try {
         mostrarMensajeEstado("Enviando...", false);
-        await axios.post(`${API_URL}/estados_usuario${Z}`, estado.value);
+        await fakeApi.post(`${API_URL}/estados_usuario${Z}`, estado.value);
         mostrarMensajeEstado("✅ Estado creado correctamente", false);
         estado.value            = estadoVacio();
         estadoSeleccionado.value = "";
@@ -298,7 +315,7 @@ const cargarEstadoEnFormulario = (e) => {
 const actualizarEstado = async () => {
     try {
         mostrarMensajeEstado("Guardando...", false);
-        await axios.put(`${API_URL}/estados_usuario/${estado.value.id}${Z}`, estado.value);
+        await fakeApi.put(`${API_URL}/estados_usuario/${estado.value.id}${Z}`, estado.value);
         mostrarMensajeEstado("✅ Estado actualizado correctamente", false);
         cancelarEdicionEstado();
         await cargarEstados();
@@ -318,7 +335,7 @@ const cancelarEdicionEstado = () => {
 const eliminarEstado = async (id) => {
     if (!confirm(`¿Seguro que quieres eliminar el estado "${id}"?`)) return;
     try {
-        await axios.delete(`${API_URL}/estados_usuario/${id}${Z}`);
+        await fakeApi.delete(`${API_URL}/estados_usuario/${id}${Z}`);
         mostrarMensajeEstado("✅ Estado eliminado correctamente", false);
         if (modoEdicionEstado.value && estado.value.id === id) cancelarEdicionEstado();
         await cargarEstados();
@@ -332,7 +349,7 @@ const eliminarEstado = async (id) => {
 const cargarUsuarios = async () => {
     cargandoUsuarios.value = true;
     try {
-        const res = await axios.get(`${API_URL}/usuarios${Z}`);
+        const res = await fakeApi.get(`${API_URL}/usuarios${Z}`);
         usuarios.value = res.data;
     } catch (error) {
         mostrarMensajeUsuario("❌ No se pudieron cargar los usuarios", true);
@@ -344,7 +361,7 @@ const cargarUsuarios = async () => {
 const insertarUsuario = async () => {
     try {
         mostrarMensajeUsuario("Enviando...", false);
-        await axios.post(`${API_URL}/usuarios${Z}`, usuario.value);
+        await fakeApi.post(`${API_URL}/usuarios${Z}`, usuario.value);
         mostrarMensajeUsuario("✅ Usuario creado correctamente", false);
         usuario.value = usuarioVacio();
         await cargarUsuarios();
@@ -365,7 +382,7 @@ const cargarUsuarioEnFormulario = (u) => {
 const actualizarUsuario = async () => {
     try {
         mostrarMensajeUsuario("Guardando...", false);
-        await axios.put(`${API_URL}/usuarios/${usuario.value.login}${Z}`, usuario.value);
+        await fakeApi.put(`${API_URL}/usuarios/${usuario.value.login}${Z}`, usuario.value);
         mostrarMensajeUsuario("✅ Usuario actualizado correctamente", false);
         cancelarEdicionUsuario();
         await cargarUsuarios();
@@ -384,7 +401,7 @@ const cancelarEdicionUsuario = () => {
 const eliminarUsuario = async (login) => {
     if (!confirm(`¿Seguro que quieres eliminar el usuario "${login}"?`)) return;
     try {
-        await axios.delete(`${API_URL}/usuarios/${login}${Z}`);
+        await fakeApi.delete(`${API_URL}/usuarios/${login}${Z}`);
         mostrarMensajeUsuario("✅ Usuario eliminado correctamente", false);
         if (modoEdicionUsuario.value && usuario.value.login === login) cancelarEdicionUsuario();
         await cargarUsuarios();

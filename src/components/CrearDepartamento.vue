@@ -1,3 +1,10 @@
+// =============================================================================
+// ARCHIVO: src/components/CrearDepartamento.vue — CRUD de departamentos
+// =============================================================================
+// PROPÓSITO: Permite al ADMIN gestionar los departamentos del centro.
+// ENDPOINTS MOCK: GET/POST/PUT/DELETE /departamentos
+// PATRÓN CRUD estándar: formulario + tabla con botones Editar/Eliminar
+// =============================================================================
 <template>
     <div class="page">
         <div class="card">
@@ -81,10 +88,17 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import axios from "axios";
-import { URL } from "@/variablesGlobales";
+// MOCK: Antes se importaba axios para peticiones HTTP reales al servidor.
+// import axios from "axios";
+// Ahora usamos fakeApi que hace las mismas operaciones en memoria local.
+import { fakeApi } from "@/mock/fakeApi";
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from "@/variablesGlobales";
+// URL original: http://44.207.19.239:3000
 
-const API_URL = URL;
+// MOCK: API_URL apunta a un placeholder. fakeApi solo necesita el nombre
+// del recurso (ej: "espacios"), el dominio se ignora.
+const API_URL = "http://mock";
 const Z = "?zusuario=ivan";
 
 const departamentos = ref([]);
@@ -110,7 +124,7 @@ onMounted(() => cargarDepartamentos());
 const cargarDepartamentos = async () => {
     cargando.value = true;
     try {
-        const res = await axios.get(`${API_URL}/departamentos${Z}`);
+        const res = await fakeApi.get(`${API_URL}/departamentos${Z}`);
         departamentos.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar los departamentos", true);
@@ -123,7 +137,7 @@ const cargarDepartamentos = async () => {
 const insertarDepartamento = async () => {
     try {
         mostrarMensaje("Enviando...", false);
-        await axios.post(`${API_URL}/departamentos${Z}`, departamento.value);
+        await fakeApi.post(`${API_URL}/departamentos${Z}`, departamento.value);
         mostrarMensaje("✅ Departamento creado correctamente", false);
         departamento.value = deptoVacio();
         await cargarDepartamentos();
@@ -148,7 +162,7 @@ const cargarEnFormulario = (d) => {
 const actualizarDepartamento = async () => {
     try {
         mostrarMensaje("Guardando...", false);
-        await axios.put(`${API_URL}/departamentos/${departamento.value.id}${Z}`, departamento.value);
+        await fakeApi.put(`${API_URL}/departamentos/${departamento.value.id}${Z}`, departamento.value);
         mostrarMensaje("✅ Departamento actualizado correctamente", false);
         cancelarEdicion();
         await cargarDepartamentos();
@@ -168,7 +182,7 @@ const cancelarEdicion = () => {
 const eliminarDepartamento = async (id) => {
     if (!confirm(`¿Seguro que quieres eliminar el departamento "${id}"?`)) return;
     try {
-        await axios.delete(`${API_URL}/departamentos/${id}${Z}`);
+        await fakeApi.delete(`${API_URL}/departamentos/${id}${Z}`);
         mostrarMensaje("✅ Departamento eliminado correctamente", false);
         if (modoEdicion.value && departamento.value.id === id) cancelarEdicion();
         await cargarDepartamentos();

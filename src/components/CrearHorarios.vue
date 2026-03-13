@@ -1,3 +1,10 @@
+// =============================================================================
+// ARCHIVO: src/components/CrearHorarios.vue — CRUD de horarios
+// =============================================================================
+// PROPÓSITO: Gestión de franjas horarias (1ª hora, 2ª hora, etc.).
+// ENDPOINTS MOCK: GET/POST/PUT/DELETE /horarios
+// Cada horario tiene hora_inicio, hora_fin y turno_id
+// =============================================================================
 <template>
     <div class="page">
         <div class="card">
@@ -90,10 +97,17 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import axios from "axios";
-import { URL } from "@/variablesGlobales";
+// MOCK: Antes se importaba axios para peticiones HTTP reales al servidor.
+// import axios from "axios";
+// Ahora usamos fakeApi que hace las mismas operaciones en memoria local.
+import { fakeApi } from "@/mock/fakeApi";
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from "@/variablesGlobales";
+// URL original: http://44.207.19.239:3000
 
-const API_URL = URL;
+// MOCK: API_URL apunta a un placeholder. fakeApi solo necesita el nombre
+// del recurso (ej: "espacios"), el dominio se ignora.
+const API_URL = "http://mock";
 const Z      = "?zusuario=ivan";
 
 // Estado 
@@ -122,7 +136,7 @@ onMounted(() => cargarHorarios());
 const cargarHorarios = async () => {
     cargando.value = true;
     try {
-        const res = await axios.get(`${API_URL}/horarios${Z}`);
+        const res = await fakeApi.get(`${API_URL}/horarios${Z}`);
         horarios.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar los horarios", true);
@@ -135,7 +149,7 @@ const cargarHorarios = async () => {
 const insertarHorario = async () => {
     try {
         mostrarMensaje("Enviando...", false);
-        await axios.post(`${API_URL}/horarios${Z}`, horario.value);
+        await fakeApi.post(`${API_URL}/horarios${Z}`, horario.value);
         mostrarMensaje("✅ Horario creado correctamente", false);
         horario.value = horarioVacio();
         await cargarHorarios();
@@ -162,7 +176,7 @@ const cargarEnFormulario = (h) => {
 const actualizarHorario = async () => {
     try {
         mostrarMensaje("Guardando...", false);
-        await axios.put(`${API_URL}/horarios/${horario.value.id}${Z}`, horario.value);
+        await fakeApi.put(`${API_URL}/horarios/${horario.value.id}${Z}`, horario.value);
         mostrarMensaje("✅ Horario actualizado correctamente", false);
         cancelarEdicion();
         await cargarHorarios();
@@ -182,7 +196,7 @@ const cancelarEdicion = () => {
 const eliminarHorario = async (id) => {
     if (!confirm(`¿Seguro que quieres eliminar el horario "${id}"?`)) return;
     try {
-        await axios.delete(`${API_URL}/horarios/${id}${Z}`);
+        await fakeApi.delete(`${API_URL}/horarios/${id}${Z}`);
         mostrarMensaje("✅ Horario eliminado correctamente", false);
         // Si estaba en edición ese mismo, cancela
         if (modoEdicion.value && horario.value.id === id) cancelarEdicion();

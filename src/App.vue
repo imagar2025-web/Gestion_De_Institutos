@@ -1,3 +1,20 @@
+// =============================================================================
+// ARCHIVO: src/App.vue — Componente raíz de la aplicación
+// =============================================================================
+// PROPÓSITO: Define el layout principal (navbar + router-view).
+//   - Muestra/oculta secciones del menú según el ROL del usuario logueado
+//   - Lee el usuario de sessionStorage para decidir qué mostrar
+//   - Controla la sesión: login, logout, protección de rutas
+//
+// NO USA API: Este archivo NO hace llamadas HTTP, así que no necesita mock.
+//   Solo lee sessionStorage para saber si hay sesión activa y qué rol tiene.
+//
+// ROLES (computed properties):
+//   esAdmin    → ve todo el menú (Mantenimiento, Gestión completa...)
+//   esTIC      → ve Incidencias + Espacios
+//   esProfesor → ve Incidencias + Reservar aula
+//   (cualquiera) → ve Crear incidencia
+// =============================================================================
 <template>
   <div>
     <!-- NAVBAR - solo visible si hay sesión -->

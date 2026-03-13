@@ -1,3 +1,15 @@
+// =============================================================================
+// ARCHIVO: src/components/InfoSistema.vue — Panel de visualización general
+// =============================================================================
+// PROPÓSITO: Vista de solo lectura que muestra TODAS las tablas del sistema.
+//   No edita nada, solo hace GET a 7 endpoints para mostrar los datos.
+//
+// PARTICULARIDAD: Este componente usa fetch() NATIVO en vez de axios.
+//   Por eso importamos fakeFetch en vez de fakeApi.
+//
+// ENDPOINTS MOCK: GET /alumnos, /profesores, /cursos, /espacios,
+//   /departamentos, /horarios, /usuarios
+// =============================================================================
 <template>
     <div class="page">
         <div class="card">
@@ -252,9 +264,16 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import { URL } from '@/variablesGlobales';
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from '@/variablesGlobales';
+// URL original: http://44.207.19.239:3000
+// MOCK: InfoSistema usa fetch() nativo. Importamos fakeFetch que
+// devuelve { ok, json() } igual que el fetch real del navegador.
+import { fakeFetch } from '@/mock/fakeApi';
 
-const API_URL = URL;
+// MOCK: API_URL apunta a un placeholder. fakeApi solo necesita el nombre
+// del recurso (ej: "espacios"), el dominio se ignora.
+const API_URL = "http://mock";
 const Z = "?zusuario=ivan";
 
 // Datos 
@@ -281,7 +300,7 @@ const cargando = reactive({
 const obtener = async (ruta, variable) => {
     cargando[ruta] = true;
     try {
-        const response = await fetch(`${API_URL}/${ruta}${Z}`);
+        const response = await fakeFetch(`${API_URL}/${ruta}${Z}`);
         if (!response.ok) throw new Error("Error en la API");
         variable.value = await response.json();
     } catch (error) {

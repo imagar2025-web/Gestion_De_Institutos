@@ -1,3 +1,9 @@
+// =============================================================================
+// ARCHIVO: src/components/CrearEtapas.vue — CRUD de etapas educativas
+// =============================================================================
+// PROPÓSITO: Gestión de etapas (ESO, BACH, DAW, ASIR, SMR).
+// ENDPOINTS MOCK: GET/POST/PUT/DELETE /etapas
+// =============================================================================
 <template>
     <div class="page">
         <div class="card">
@@ -69,10 +75,17 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import axios from "axios";
-import { URL } from "@/variablesGlobales";
+// MOCK: Antes se importaba axios para peticiones HTTP reales al servidor.
+// import axios from "axios";
+// Ahora usamos fakeApi que hace las mismas operaciones en memoria local.
+import { fakeApi } from "@/mock/fakeApi";
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from "@/variablesGlobales";
+// URL original: http://44.207.19.239:3000
 
-const API_URL = URL;
+// MOCK: API_URL apunta a un placeholder. fakeApi solo necesita el nombre
+// del recurso (ej: "espacios"), el dominio se ignora.
+const API_URL = "http://mock";
 const Z       = "?zusuario=ivan";
 
 const etapas       = ref([]);
@@ -96,7 +109,7 @@ onMounted(() => cargarEtapas());
 const cargarEtapas = async () => {
     cargando.value = true;
     try {
-        const res = await axios.get(`${API_URL}/etapas${Z}`);
+        const res = await fakeApi.get(`${API_URL}/etapas${Z}`);
         etapas.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar las etapas", true);
@@ -108,7 +121,7 @@ const cargarEtapas = async () => {
 const insertarEtapa = async () => {
     try {
         mostrarMensaje("Enviando...", false);
-        await axios.post(`${API_URL}/etapas${Z}`, etapa.value);
+        await fakeApi.post(`${API_URL}/etapas${Z}`, etapa.value);
         mostrarMensaje("✅ Etapa creada correctamente", false);
         etapa.value = etapaVacia();
         await cargarEtapas();
@@ -132,7 +145,7 @@ const cargarEnFormulario = (e) => {
 const actualizarEtapa = async () => {
     try {
         mostrarMensaje("Guardando...", false);
-        await axios.put(`${API_URL}/etapas/${etapa.value.id}${Z}`, etapa.value);
+        await fakeApi.put(`${API_URL}/etapas/${etapa.value.id}${Z}`, etapa.value);
         mostrarMensaje("✅ Etapa actualizada correctamente", false);
         cancelarEdicion();
         await cargarEtapas();
@@ -151,7 +164,7 @@ const cancelarEdicion = () => {
 const eliminarEtapa = async (id) => {
     if (!confirm(`¿Seguro que quieres eliminar la etapa "${id}"?`)) return;
     try {
-        await axios.delete(`${API_URL}/etapas/${id}${Z}`);
+        await fakeApi.delete(`${API_URL}/etapas/${id}${Z}`);
         mostrarMensaje("✅ Etapa eliminada correctamente", false);
         if (modoEdicion.value && etapa.value.id === id) cancelarEdicion();
         await cargarEtapas();

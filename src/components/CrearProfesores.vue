@@ -1,3 +1,10 @@
+// =============================================================================
+// ARCHIVO: src/components/CrearProfesores.vue — CRUD de profesores
+// =============================================================================
+// PROPÓSITO: Gestión de profesores. Carga departamentos para el selector.
+// ENDPOINTS MOCK: GET/POST/PUT/DELETE /profesores + GET /departamentos
+// NOTA: La clave primaria es dni_nie, NO "id"
+// =============================================================================
 <template>
     <div class="page">
         <div class="card">
@@ -108,10 +115,17 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import axios from "axios";
-import { URL } from "@/variablesGlobales";
+// MOCK: Antes se importaba axios para peticiones HTTP reales al servidor.
+// import axios from "axios";
+// Ahora usamos fakeApi que hace las mismas operaciones en memoria local.
+import { fakeApi } from "@/mock/fakeApi";
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from "@/variablesGlobales";
+// URL original: http://44.207.19.239:3000
 
-const API_URL = URL;
+// MOCK: API_URL apunta a un placeholder. fakeApi solo necesita el nombre
+// del recurso (ej: "espacios"), el dominio se ignora.
+const API_URL = "http://mock";
 const Z = "?zusuario=ivan";
 
 const rolesDisponibles = ["ADMIN", "TIC", "PROF", "ALUM"];
@@ -145,7 +159,7 @@ onMounted(async () => {
 // GET departamentos para el selector
 const cargarDepartamentos = async () => {
     try {
-        const res = await axios.get(`${API_URL}/departamentos${Z}`);
+        const res = await fakeApi.get(`${API_URL}/departamentos${Z}`);
         departamentos.value = res.data;
     } catch (error) {
         console.error("Error cargando departamentos:", error);
@@ -156,7 +170,7 @@ const cargarDepartamentos = async () => {
 const cargarProfesores = async () => {
     cargando.value = true;
     try {
-        const res = await axios.get(`${API_URL}/profesores${Z}`);
+        const res = await fakeApi.get(`${API_URL}/profesores${Z}`);
         profesores.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar los profesores", true);
@@ -169,7 +183,7 @@ const cargarProfesores = async () => {
 const insertarProfesor = async () => {
     try {
         mostrarMensaje("Enviando...", false);
-        await axios.post(`${API_URL}/profesores${Z}`, profesor.value);
+        await fakeApi.post(`${API_URL}/profesores${Z}`, profesor.value);
         mostrarMensaje("✅ Profesor creado correctamente", false);
         profesor.value = profVacio();
         await cargarProfesores();
@@ -194,7 +208,7 @@ const cargarEnFormulario = (p) => {
 const actualizarProfesor = async () => {
     try {
         mostrarMensaje("Guardando...", false);
-        await axios.put(`${API_URL}/profesores/${profesor.value.dni_nie}${Z}`, profesor.value);
+        await fakeApi.put(`${API_URL}/profesores/${profesor.value.dni_nie}${Z}`, profesor.value);
         mostrarMensaje("✅ Profesor actualizado correctamente", false);
         cancelarEdicion();
         await cargarProfesores();
@@ -214,7 +228,7 @@ const cancelarEdicion = () => {
 const eliminarProfesor = async (dni) => {
     if (!confirm(`¿Seguro que quieres eliminar al profesor "${dni}"?`)) return;
     try {
-        await axios.delete(`${API_URL}/profesores/${dni}${Z}`);
+        await fakeApi.delete(`${API_URL}/profesores/${dni}${Z}`);
         mostrarMensaje("✅ Profesor eliminado correctamente", false);
         if (modoEdicion.value && profesor.value.dni_nie === dni) cancelarEdicion();
         await cargarProfesores();

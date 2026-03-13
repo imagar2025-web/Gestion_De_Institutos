@@ -1,3 +1,10 @@
+// =============================================================================
+// ARCHIVO: src/components/CrearAlumnos.vue — CRUD de alumnos
+// =============================================================================
+// PROPÓSITO: Gestión de alumnos del centro.
+// ENDPOINTS MOCK: GET/POST/PUT/DELETE /alumnos + GET /estados_usuario + GET /cursos
+// Clave primaria: nia (número de identificación del alumno)
+// =============================================================================
 <template>
     <div class="page">
         <div class="card">
@@ -107,10 +114,17 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import axios from "axios";
-import { URL } from "@/variablesGlobales";
+// MOCK: Antes se importaba axios para peticiones HTTP reales al servidor.
+// import axios from "axios";
+// Ahora usamos fakeApi que hace las mismas operaciones en memoria local.
+import { fakeApi } from "@/mock/fakeApi";
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from "@/variablesGlobales";
+// URL original: http://44.207.19.239:3000
 
-const API_URL = URL;
+// MOCK: API_URL apunta a un placeholder. fakeApi solo necesita el nombre
+// del recurso (ej: "espacios"), el dominio se ignora.
+const API_URL = "http://mock";
 const Z       = "?zusuario=ivan";
 
 const alumnos      = ref([]);
@@ -141,7 +155,7 @@ onMounted(async () => {
 
 const cargarEstados = async () => {
     try {
-        const res = await axios.get(`${API_URL}/estados_usuario${Z}`);
+        const res = await fakeApi.get(`${API_URL}/estados_usuario${Z}`);
         estados.value = res.data;
     } catch (error) {
         console.error("Error cargando estados:", error);
@@ -150,7 +164,7 @@ const cargarEstados = async () => {
 
 const cargarCursos = async () => {
     try {
-        const res = await axios.get(`${API_URL}/cursos${Z}`);
+        const res = await fakeApi.get(`${API_URL}/cursos${Z}`);
         cursos.value = res.data;
     } catch (error) {
         console.error("Error cargando cursos:", error);
@@ -160,7 +174,7 @@ const cargarCursos = async () => {
 const cargarAlumnos = async () => {
     cargando.value = true;
     try {
-        const res = await axios.get(`${API_URL}/alumnos${Z}`);
+        const res = await fakeApi.get(`${API_URL}/alumnos${Z}`);
         alumnos.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar los alumnos", true);
@@ -172,7 +186,7 @@ const cargarAlumnos = async () => {
 const insertarAlumno = async () => {
     try {
         mostrarMensaje("Enviando...", false);
-        await axios.post(`${API_URL}/alumnos${Z}`, alumno.value);
+        await fakeApi.post(`${API_URL}/alumnos${Z}`, alumno.value);
         mostrarMensaje("✅ Alumno creado correctamente", false);
         alumno.value = alumnoVacio();
         await cargarAlumnos();
@@ -196,7 +210,7 @@ const cargarEnFormulario = (a) => {
 const actualizarAlumno = async () => {
     try {
         mostrarMensaje("Guardando...", false);
-        await axios.put(`${API_URL}/alumnos/${alumno.value.nia}${Z}`, alumno.value);
+        await fakeApi.put(`${API_URL}/alumnos/${alumno.value.nia}${Z}`, alumno.value);
         mostrarMensaje("✅ Alumno actualizado correctamente", false);
         cancelarEdicion();
         await cargarAlumnos();
@@ -215,7 +229,7 @@ const cancelarEdicion = () => {
 const eliminarAlumno = async (nia) => {
     if (!confirm(`¿Seguro que quieres eliminar al alumno con NIA "${nia}"?`)) return;
     try {
-        await axios.delete(`${API_URL}/alumnos/${nia}${Z}`);
+        await fakeApi.delete(`${API_URL}/alumnos/${nia}${Z}`);
         mostrarMensaje("✅ Alumno eliminado correctamente", false);
         if (modoEdicion.value && alumno.value.nia == nia) cancelarEdicion();
         await cargarAlumnos();

@@ -1,3 +1,9 @@
+// =============================================================================
+// ARCHIVO: src/components/CrearTurnos.vue — CRUD de turnos
+// =============================================================================
+// PROPÓSITO: Gestión de turnos horarios (Mañana, Tarde).
+// ENDPOINTS MOCK: GET/POST/PUT/DELETE /turnos
+// =============================================================================
 <template>
     <div class="page">
         <div class="card">
@@ -69,10 +75,17 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import axios from "axios";
-import { URL } from "@/variablesGlobales";
+// MOCK: Antes se importaba axios para peticiones HTTP reales al servidor.
+// import axios from "axios";
+// Ahora usamos fakeApi que hace las mismas operaciones en memoria local.
+import { fakeApi } from "@/mock/fakeApi";
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from "@/variablesGlobales";
+// URL original: http://44.207.19.239:3000
 
-const API_URL = URL;
+// MOCK: API_URL apunta a un placeholder. fakeApi solo necesita el nombre
+// del recurso (ej: "espacios"), el dominio se ignora.
+const API_URL = "http://mock";
 const Z       = "?zusuario=ivan";
 
 const turnos       = ref([]);
@@ -96,7 +109,7 @@ onMounted(() => cargarTurnos());
 const cargarTurnos = async () => {
     cargando.value = true;
     try {
-        const res = await axios.get(`${API_URL}/turnos${Z}`);
+        const res = await fakeApi.get(`${API_URL}/turnos${Z}`);
         turnos.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar los turnos", true);
@@ -108,7 +121,7 @@ const cargarTurnos = async () => {
 const insertarTurno = async () => {
     try {
         mostrarMensaje("Enviando...", false);
-        await axios.post(`${API_URL}/turnos${Z}`, turno.value);
+        await fakeApi.post(`${API_URL}/turnos${Z}`, turno.value);
         mostrarMensaje("✅ Turno creado correctamente", false);
         turno.value = turnoVacio();
         await cargarTurnos();
@@ -132,7 +145,7 @@ const cargarEnFormulario = (t) => {
 const actualizarTurno = async () => {
     try {
         mostrarMensaje("Guardando...", false);
-        await axios.put(`${API_URL}/turnos/${turno.value.id}${Z}`, turno.value);
+        await fakeApi.put(`${API_URL}/turnos/${turno.value.id}${Z}`, turno.value);
         mostrarMensaje("✅ Turno actualizado correctamente", false);
         cancelarEdicion();
         await cargarTurnos();
@@ -151,7 +164,7 @@ const cancelarEdicion = () => {
 const eliminarTurno = async (id) => {
     if (!confirm(`¿Seguro que quieres eliminar el turno "${id}"?`)) return;
     try {
-        await axios.delete(`${API_URL}/turnos/${id}${Z}`);
+        await fakeApi.delete(`${API_URL}/turnos/${id}${Z}`);
         mostrarMensaje("✅ Turno eliminado correctamente", false);
         if (modoEdicion.value && turno.value.id === id) cancelarEdicion();
         await cargarTurnos();

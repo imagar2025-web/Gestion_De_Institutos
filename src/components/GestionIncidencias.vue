@@ -1,3 +1,17 @@
+// =============================================================================
+// ARCHIVO: src/components/GestionIncidencias.vue — CRUD completo de incidencias
+// =============================================================================
+// PROPÓSITO: Vista ADMIN para gestión completa (crear, editar, eliminar).
+//   A diferencia de CrearIncidencia (solo crear) y ResolverIncidencia (solo resolver),
+//   este componente permite modificar TODOS los campos de una incidencia.
+//
+// ENDPOINTS MOCK USADOS:
+//   GET /espacios, /usuarios, /estados_incidencia → para los selectores del formulario
+//   GET /incidencias    → listar todas
+//   POST /incidencias   → crear nueva
+//   PUT /incidencias/:id → editar cualquier campo
+//   DELETE /incidencias/:id → eliminar
+// =============================================================================
 <template>
     <div class="page">
         <div class="card">
@@ -122,10 +136,17 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import axios from "axios";
-import { URL } from "@/variablesGlobales";
+// MOCK: Antes se importaba axios para peticiones HTTP reales al servidor.
+// import axios from "axios";
+// Ahora usamos fakeApi que hace las mismas operaciones en memoria local.
+import { fakeApi } from "@/mock/fakeApi";
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from "@/variablesGlobales";
+// URL original: http://44.207.19.239:3000
 
-const API_URL = URL;
+// MOCK: API_URL apunta a un placeholder. fakeApi solo necesita el nombre
+// del recurso (ej: "espacios"), el dominio se ignora.
+const API_URL = "http://mock";
 const Z       = "?zusuario=ivan";
 
 const incidencias       = ref([]);
@@ -158,21 +179,21 @@ onMounted(async () => {
 
 const cargarEspacios = async () => {
     try {
-        const res = await axios.get(`${API_URL}/espacios${Z}`);
+        const res = await fakeApi.get(`${API_URL}/espacios${Z}`);
         espacios.value = res.data;
     } catch (error) { console.error("Error cargando espacios:", error); }
 };
 
 const cargarUsuarios = async () => {
     try {
-        const res = await axios.get(`${API_URL}/usuarios${Z}`);
+        const res = await fakeApi.get(`${API_URL}/usuarios${Z}`);
         usuarios.value = res.data;
     } catch (error) { console.error("Error cargando usuarios:", error); }
 };
 
 const cargarEstadosIncidencia = async () => {
     try {
-        const res = await axios.get(`${API_URL}/estados_incidencia${Z}`);
+        const res = await fakeApi.get(`${API_URL}/estados_incidencia${Z}`);
         estadosIncidencia.value = res.data;
     } catch (error) { console.error("Error cargando estados incidencia:", error); }
 };
@@ -180,7 +201,7 @@ const cargarEstadosIncidencia = async () => {
 const cargarIncidencias = async () => {
     cargando.value = true;
     try {
-        const res = await axios.get(`${API_URL}/incidencias${Z}`);
+        const res = await fakeApi.get(`${API_URL}/incidencias${Z}`);
         incidencias.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar las incidencias", true);
@@ -192,7 +213,7 @@ const cargarIncidencias = async () => {
 const insertarIncidencia = async () => {
     try {
         mostrarMensaje("Enviando...", false);
-        await axios.post(`${API_URL}/incidencias${Z}`, incidencia.value);
+        await fakeApi.post(`${API_URL}/incidencias${Z}`, incidencia.value);
         mostrarMensaje("✅ Incidencia creada correctamente", false);
         incidencia.value = incidenciaVacia();
         await cargarIncidencias();
@@ -217,7 +238,7 @@ const cargarEnFormulario = (i) => {
 const actualizarIncidencia = async () => {
     try {
         mostrarMensaje("Guardando...", false);
-        await axios.put(`${API_URL}/incidencias/${incidencia.value.id}${Z}`, incidencia.value);
+        await fakeApi.put(`${API_URL}/incidencias/${incidencia.value.id}${Z}`, incidencia.value);
         mostrarMensaje("✅ Incidencia actualizada correctamente", false);
         cancelarEdicion();
         await cargarIncidencias();
@@ -236,7 +257,7 @@ const cancelarEdicion = () => {
 const eliminarIncidencia = async (id) => {
     if (!confirm(`¿Seguro que quieres eliminar la incidencia #${id}?`)) return;
     try {
-        await axios.delete(`${API_URL}/incidencias/${id}${Z}`);
+        await fakeApi.delete(`${API_URL}/incidencias/${id}${Z}`);
         mostrarMensaje("✅ Incidencia eliminada correctamente", false);
         if (modoEdicion.value && incidencia.value.id == id) cancelarEdicion();
         await cargarIncidencias();

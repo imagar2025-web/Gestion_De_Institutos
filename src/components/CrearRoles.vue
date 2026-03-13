@@ -1,3 +1,9 @@
+// =============================================================================
+// ARCHIVO: src/components/CrearRoles.vue — CRUD de roles
+// =============================================================================
+// PROPÓSITO: Gestión de los roles del sistema (ADMIN, TIC, PROF, ALUM).
+// ENDPOINTS MOCK: GET/POST/PUT/DELETE /roles
+// =============================================================================
 <template>
     <div class="page">
         <div class="card">
@@ -77,10 +83,17 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import axios from "axios";
-import { URL } from "@/variablesGlobales";
+// MOCK: Antes se importaba axios para peticiones HTTP reales al servidor.
+// import axios from "axios";
+// Ahora usamos fakeApi que hace las mismas operaciones en memoria local.
+import { fakeApi } from "@/mock/fakeApi";
+// MOCK: La URL del servidor real ya no se usa.
+// import { URL } from "@/variablesGlobales";
+// URL original: http://44.207.19.239:3000
 
-const API_URL = URL;
+// MOCK: API_URL apunta a un placeholder. fakeApi solo necesita el nombre
+// del recurso (ej: "espacios"), el dominio se ignora.
+const API_URL = "http://mock";
 const Z       = "?zusuario=ivan";
 
 const roles        = ref([]);
@@ -105,7 +118,7 @@ onMounted(() => cargarRoles());
 const cargarRoles = async () => {
     cargando.value = true;
     try {
-        const res = await axios.get(`${API_URL}/roles${Z}`);
+        const res = await fakeApi.get(`${API_URL}/roles${Z}`);
         roles.value = res.data;
     } catch (error) {
         mostrarMensaje("❌ No se pudieron cargar los roles", true);
@@ -117,7 +130,7 @@ const cargarRoles = async () => {
 const insertarRol = async () => {
     try {
         mostrarMensaje("Enviando...", false);
-        await axios.post(`${API_URL}/roles${Z}`, rol.value);
+        await fakeApi.post(`${API_URL}/roles${Z}`, rol.value);
         mostrarMensaje("✅ Rol creado correctamente", false);
         rol.value = rolVacio();
         await cargarRoles();
@@ -141,7 +154,7 @@ const cargarEnFormulario = (r) => {
 const actualizarRol = async () => {
     try {
         mostrarMensaje("Guardando...", false);
-        await axios.put(`${API_URL}/roles/${rol.value.id}${Z}`, rol.value);
+        await fakeApi.put(`${API_URL}/roles/${rol.value.id}${Z}`, rol.value);
         mostrarMensaje("✅ Rol actualizado correctamente", false);
         cancelarEdicion();
         await cargarRoles();
@@ -160,7 +173,7 @@ const cancelarEdicion = () => {
 const eliminarRol = async (id) => {
     if (!confirm(`¿Seguro que quieres eliminar el rol "${id}"?`)) return;
     try {
-        await axios.delete(`${API_URL}/roles/${id}${Z}`);
+        await fakeApi.delete(`${API_URL}/roles/${id}${Z}`);
         mostrarMensaje("✅ Rol eliminado correctamente", false);
         if (modoEdicion.value && rol.value.id === id) cancelarEdicion();
         await cargarRoles();
